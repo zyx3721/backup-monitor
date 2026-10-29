@@ -1,0 +1,5200 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Backup Monitor 通用前后端模板后端 API 文档。除登录、公开品牌与健康检查外，接口默认需要 Bearer Token。",
+        "title": "Backup Monitor API",
+        "contact": {},
+        "version": "1.0.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/api/agent/binary/latest": {
+            "get": {
+                "description": "按平台、架构与系统版本选择槽位，返回对应安装包的版本号、大小、SHA-256 与通道",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 通道"
+                ],
+                "summary": "查询最新 Agent 版本",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "平台，取值 linux 或 windows",
+                        "name": "platform",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CPU 架构，取值 amd64 或 arm64；省略时按 amd64 处理",
+                        "name": "arch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Windows 构建号，用于自动选包",
+                        "name": "osBuild",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Agent 访问令牌，启用校验时必填",
+                        "name": "X-Agent-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentBinaryLatestResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/agent/config": {
+            "get": {
+                "description": "返回全局参数、采集配置与二进制更新信息供 Agent 应用",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 通道"
+                ],
+                "summary": "拉取 Agent 配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "主机名",
+                        "name": "hostname",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "平台，取值 linux 或 windows",
+                        "name": "platform",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Agent 访问令牌，启用校验时必填",
+                        "name": "X-Agent-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/agent/download": {
+            "get": {
+                "description": "下载匹配主机架构与系统版本的托管 Agent 二进制；精确指定 arch+variant 时取对应槽位，否则按 osBuild 自动选包",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "Agent 通道"
+                ],
+                "summary": "下载托管 Agent 二进制",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "平台，取值 linux 或 windows",
+                        "name": "platform",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CPU 架构，取值 amd64 或 arm64；省略时按 osBuild 自动选包",
+                        "name": "arch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "通道，取值 standard 或 legacy；与 arch 同时指定时精确取槽位",
+                        "name": "variant",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Windows 构建号，用于在未精确指定槽位时自动选包",
+                        "name": "osBuild",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Agent 访问令牌，启用校验时必填",
+                        "name": "X-Agent-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "二进制文件",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/agent/ws": {
+            "get": {
+                "description": "建立 WebSocket 长连接，承载心跳、配置变更与 set_cron/update 命令回执",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 通道"
+                ],
+                "summary": "Agent 心跳长连接",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "主机名",
+                        "name": "hostname",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "稳定机器标识",
+                        "name": "nodeId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "平台，取值 linux 或 windows",
+                        "name": "platform",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Agent 访问令牌，启用校验时必填",
+                        "name": "X-Agent-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "协议升级为 WebSocket",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/change-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "修改当前登录用户的密码，旧密码错误返回 400，成功后需重新登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "修改当前用户密码",
+                "parameters": [
+                    {
+                        "description": "密码修改请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.changePasswordBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerMessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "description": "用户登录，支持本地密码与 AD/LDAP 两种方式，成功返回令牌与用户信息；同一账号密码连续错误达到阈值后锁定，锁定期间即使密码正确也返回 429 与剩余等待分钟（内置 admin 不受限，企业微信扫码不涉及）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "用户登录",
+                "parameters": [
+                    {
+                        "description": "登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.authLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.authLoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "退出当前会话，并写入用户注销审计",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "登出当前会话",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前登录用户的资料、直接角色、有效角色与权限清单",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "获取当前用户",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/password-reset/captcha": {
+            "get": {
+                "description": "获取找回密码图形验证码，无需认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "获取找回密码图形验证码",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPasswordResetCaptchaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/password-reset/confirm": {
+            "post": {
+                "description": "凭邮箱验证码完成找回密码，重置账号密码并写入审计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "确认找回密码",
+                "parameters": [
+                    {
+                        "description": "找回密码确认",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPasswordResetConfirmRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerMessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/password-reset/send": {
+            "post": {
+                "description": "向校验通过的邮箱发送找回密码验证码，受发送冷却与限流窗口约束",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "发送找回密码验证码",
+                "parameters": [
+                    {
+                        "description": "找回密码验证码发送",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPasswordResetSendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPasswordResetSendResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/password-reset/verify": {
+            "post": {
+                "description": "校验用户名与图形验证码，换取找回密码流程令牌",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "校验找回密码身份",
+                "parameters": [
+                    {
+                        "description": "找回密码身份校验",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPasswordResetVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPasswordResetVerifyResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/providers": {
+            "get": {
+                "description": "获取登录页可用的认证方式与找回密码开关，无需认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "获取公开认证方式",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPublicAuthProvidersResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/wecom/authorize": {
+            "get": {
+                "description": "生成企业微信 Web 扫码登录页地址（含防伪 state）与内嵌二维码渲染参数（iframe_url、callback_path）；直连模式内嵌扫码回跳 /wecom-qr-callback，统一认证中心模式回跳 /login。登录页默认内嵌渲染二维码，配置异常时自动回退整页跳转；需已启用企业微信认证，无需认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "获取企业微信扫码登录地址",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomAuthorizeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/wecom/bind": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "校验绑定 state 后用授权码换取企业微信成员 userid，与当前用户建立绑定；该企微已绑定其他用户时返回 409",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "绑定企业微信账号",
+                "parameters": [
+                    {
+                        "description": "扫码回调载荷",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomCallbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomBindResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "解除当前登录用户的企业微信绑定",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "解绑企业微信账号",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/wecom/bind-url": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "为当前登录用户生成企业微信绑定扫码地址，state 绑定当前用户；需已启用企业微信认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "获取企业微信绑定扫码地址",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomAuthorizeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/wecom/callback": {
+            "post": {
+                "description": "校验 state 后用授权码换取企业微信成员身份，按绑定关系登录并返回令牌与用户信息；未绑定时返回 401",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "企业微信扫码登录回调",
+                "parameters": [
+                    {
+                        "description": "扫码回调载荷",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomCallbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.authLoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/wecom/sso/bind": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "企业微信统一认证（SSO）模式：校验认证中心一次性 ticket 后与当前登录用户建立绑定；该企微已绑定其他用户时返回 409",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "统一认证中心扫码绑定",
+                "parameters": [
+                    {
+                        "description": "认证中心回跳凭证",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomSSORequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomBindResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/wecom/sso/callback": {
+            "post": {
+                "description": "企业微信统一认证（SSO）模式：校验认证中心回跳的一次性 ticket 后按绑定关系登录并返回令牌与用户信息；需已启用统一认证模式",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "统一认证中心扫码登录回调",
+                "parameters": [
+                    {
+                        "description": "认证中心回跳凭证",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomSSORequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.authLoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/agent-binaries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回各槽位（平台 + 架构 + 通道）已托管的版本、Go 版本、大小与 SHA-256（权限 backup.agents.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "获取已托管 Agent 二进制",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerAgentBinaryMeta"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/agent-binary": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "上传指定平台与通道的 Agent 二进制并写入审计，支持 amd64 与 arm64（服务端按文件头解析架构、按 buildinfo 读取 Go 版本），单次不超过 128MB（权限 backup.agents.manage）",
+                "consumes": [
+                    "application/octet-stream"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "上传 Agent 二进制",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "平台，取值 linux 或 windows",
+                        "name": "platform",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "通道，取值 standard 或 legacy；缺省按 Go 版本推导（Windows amd64 且 Go \u003c 1.21 归入 legacy）",
+                        "name": "variant",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "版本号",
+                        "name": "version",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "二进制原始字节（服务端校验 ELF/PE）",
+                        "name": "file",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentBinaryMeta"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/agent-update/push": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按平台与 IP 条件逐台选择匹配的槽位（架构 + Windows 版本）下发自更新并写入审计（权限 backup.agents.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "推送 Agent 自更新",
+                "parameters": [
+                    {
+                        "description": "平台与目标主机（全部或 IP 条件）",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentBinaryPushRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/alerts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部告警事件及其状态、级别与关联任务（权限 backup.alerts.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "告警中心"
+                ],
+                "summary": "获取告警事件列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerAlert"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/alerts/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除指定告警并写入审计（权限 backup.alerts.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "告警中心"
+                ],
+                "summary": "删除告警",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "告警 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/alerts/{id}/resolve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "手动恢复指定告警并写入审计（权限 backup.alerts.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "告警中心"
+                ],
+                "summary": "恢复告警",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "告警 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回主机、任务、今日执行与告警的汇总、状态分布与每日趋势（权限 backup.dashboard.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "概览"
+                ],
+                "summary": "获取概览统计",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/executions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部执行记录及其任务、主机与结果（权限 backup.executions.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "执行记录"
+                ],
+                "summary": "获取执行记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "返回条数上限，0 或省略表示全部",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerExecution"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/executions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回指定执行记录（权限 backup.executions.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "执行记录"
+                ],
+                "summary": "获取执行记录详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "执行记录 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerExecution"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除指定执行记录并写入审计（权限 backup.executions.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "执行记录"
+                ],
+                "summary": "删除执行记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "执行记录 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/hosts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回备份主机及其状态、最近上报时间与任务数，可用 ids 只取指定主机（权限 backup.hosts.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份主机"
+                ],
+                "summary": "获取备份主机列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "主机 ID，多个用逗号分隔；省略时返回全部",
+                        "name": "ids",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerHost"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/hosts/refresh-plan": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按主机实际匹配到的上报间隔分组，供前端按组局部刷新（权限 backup.hosts.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份主机"
+                ],
+                "summary": "获取主机刷新计划",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHostRefreshPlan"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/hosts/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回指定主机及其名下任务列表（权限 backup.hosts.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份主机"
+                ],
+                "summary": "获取备份主机详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "主机 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHostDetail"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除主机并级联清理其任务、执行记录与告警，详见审计详情（权限 backup.hosts.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份主机"
+                ],
+                "summary": "删除备份主机",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "主机 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/hosts/{id}/role": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "修改主机角色并写入审计（权限 backup.hosts.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份主机"
+                ],
+                "summary": "修改主机角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "主机 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "主机角色",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHostRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回通知发送记录及其渠道、状态与错误信息（权限 backup.notifications.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "通知管理"
+                ],
+                "summary": "获取通知发送记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "返回条数上限，默认 100，最大 500",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按通知渠道 ID 过滤，省略时返回全部",
+                        "name": "channel",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerNotificationRecord"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/notify/channels": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回通知渠道及其方式、订阅事件、级别与启用状态（权限 backup.notifications.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "通知管理"
+                ],
+                "summary": "获取通知渠道列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerNotifyChannel"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建通知渠道并写入审计（权限 backup.notifications.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "通知管理"
+                ],
+                "summary": "创建通知渠道",
+                "parameters": [
+                    {
+                        "description": "通知渠道",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerNotifyChannel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/notify/channels/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新或启停用通知渠道并写入审计；未改动时不写审计（权限 backup.notifications.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "通知管理"
+                ],
+                "summary": "更新通知渠道",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通知渠道 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "通知渠道",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerNotifyChannel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除通知渠道并写入审计（权限 backup.notifications.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "通知管理"
+                ],
+                "summary": "删除通知渠道",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通知渠道 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/notify/channels/{id}/test": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按渠道配置发送测试通知，成功与失败均写入审计（权限 backup.notifications.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "通知管理"
+                ],
+                "summary": "测试通知渠道",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通知渠道 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/profiles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部采集配置及其匹配主机、优先级与采集项（权限 backup.agents.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "获取采集配置列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerAgentProfile"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建采集配置并写入审计（权限 backup.agents.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "创建采集配置",
+                "parameters": [
+                    {
+                        "description": "采集配置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentProfile"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/profiles/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新采集配置并写入审计，未改动时不写审计（权限 backup.agents.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "更新采集配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "采集配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "采集配置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentProfile"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除采集配置并写入审计（权限 backup.agents.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "删除采集配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "采集配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/settings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回判定阈值、保留策略与 Agent 通道参数（权限 settings.base.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取备份参数",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 section 更新判定与保留、Agent 通道或安全与告警参数并写入审计（权限 settings.base.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "更新备份参数",
+                "parameters": [
+                    {
+                        "description": "备份参数，section 取值 thresholds/agent/alarm",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/tasks": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部备份任务及其计划、状态与所属主机（权限 backup.tasks.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份任务"
+                ],
+                "summary": "获取备份任务列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerTask"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/tasks/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回指定备份任务（权限 backup.tasks.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份任务"
+                ],
+                "summary": "获取备份任务详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerTask"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除任务并级联清理执行记录与告警（权限 backup.tasks.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份任务"
+                ],
+                "summary": "删除备份任务",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/tasks/{id}/executions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回指定任务的执行记录列表（权限 backup.tasks.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份任务"
+                ],
+                "summary": "获取任务执行历史",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerExecution"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/tasks/{id}/schedule": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回（权限 backup.tasks.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "备份任务"
+                ],
+                "summary": "修改执行计划",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "新的 cron 表达式",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerTaskScheduleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/tokens": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回 Agent 访问令牌及其启用状态与最近使用时间（权限 backup.agents.read）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "获取 Agent 令牌列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerAgentToken"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建 Agent 访问令牌，token 留空时自动生成 48 位随机值，自定义值需 16-128 位可见 ASCII 且不得重复；仅在创建响应中返回明文令牌并写入审计（权限 backup.agents.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "创建 Agent 令牌",
+                "parameters": [
+                    {
+                        "description": "令牌名称、绑定主机与可选的自定义令牌",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentTokenCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentTokenCreateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/tokens/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新令牌名称、绑定主机或启用状态并写入审计（权限 backup.agents.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "更新 Agent 令牌",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "令牌 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "令牌名称、绑定主机与启用状态",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAgentTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除 Agent 令牌并写入审计（权限 backup.agents.manage）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 管理"
+                ],
+                "summary": "删除 Agent 令牌",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "令牌 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/health": {
+            "get": {
+                "description": "探测服务进程是否存活，无需认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "健康检查"
+                ],
+                "summary": "API 健康检查",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取审计日志；导入类事件的目标仅返回前两个名称，完整清单通过 targetTitle 返回供悬浮提示",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计日志"
+                ],
+                "summary": "获取审计日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "返回条数；默认返回全部",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerAuditHistoryResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/history/clear": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按前端筛选结果批量清空审计日志；清空成功后自动补记一条「清空审计日志」审计事件（归属「审计日志」模块，目标为清除条数）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计日志"
+                ],
+                "summary": "清空审计日志",
+                "parameters": [
+                    {
+                        "description": "待清空的审计日志编号清单",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHistoryClearRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHistoryClearResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/history/export": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "各页面导出完成后回写一条审计，模块取值 hosts/tasks/executions/alerts/audit",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计日志"
+                ],
+                "summary": "记录数据导出",
+                "parameters": [
+                    {
+                        "description": "导出模块与记录条数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHistoryExportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/ingest/report": {
+            "post": {
+                "description": "接收 Agent 上报的主机、任务与执行记录，按 task+session 幂等更新；协议见 docs/agent-protocol.md",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent 通道"
+                ],
+                "summary": "Agent 上报数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent 访问令牌，启用校验时必填",
+                        "name": "X-Agent-Token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "主机、任务与执行记录",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/public/base": {
+            "get": {
+                "description": "获取登录页与启动屏使用的品牌标识，无需认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "获取公开品牌标识",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerPublicBrandingResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/auth-provider": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取 AD/LDAP 认证配置（敏感字段脱敏）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取认证配置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsAuthProviderResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "保存 AD/LDAP 认证配置",
+                "parameters": [
+                    {
+                        "description": "AD/LDAP 认证配置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsAuthProviderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsAuthProviderResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/auth-provider/test": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按请求体或当前配置发起 LDAP 连通性测试（权限 settings.auth.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "测试 LDAP 连通性",
+                "parameters": [
+                    {
+                        "description": "待测试的 LDAP 连接参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/auth/wecom": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取企业微信认证配置（Secret 不回显，仅返回是否已配置）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取企业微信认证配置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomProvider"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "保存企业微信认证配置；认证方式 direct（直连）启用时要求企业 ID、AgentID 与 Secret 完整，sso（统一认证中心）启用时要求认证中心地址、应用标识与应用密钥完整，密钥加密存储不回显",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "保存企业微信认证配置",
+                "parameters": [
+                    {
+                        "description": "企业微信认证配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomProviderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerWecomProvider"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/base": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取系统基础配置",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取系统基础配置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSystemBaseConfig"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新系统基础配置；携带 section（brand/security/backup）时按区块局部更新，审计目标细分为品牌标识、安全时效、数据备份",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "更新系统基础配置",
+                "parameters": [
+                    {
+                        "description": "系统基础配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSystemBaseConfig"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSystemBaseConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/email": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取邮件配置（敏感字段脱敏）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取邮件配置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsEmailResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "保存邮件配置",
+                "parameters": [
+                    {
+                        "description": "邮件配置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsEmailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsEmailResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/email/test": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按当前邮件配置向指定收件人发送测试邮件并写入审计（权限 settings.notifications.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "发送测试邮件",
+                "parameters": [
+                    {
+                        "description": "测试收件人，字段 to",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/permissions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回权限目录全量清单（Key、名称、描述、分类与隐含关系）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取权限目录",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/swagger.swaggerGenericObject"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/roles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取角色列表及权限集合",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取设置角色列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsRoleListResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "创建角色",
+                "parameters": [
+                    {
+                        "description": "角色信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/roles/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "更新角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "角色信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "删除角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/roles/{id}/disabled": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "启用或禁用角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "启用或禁用",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsDisabledRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/user-groups": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取用户群组列表及成员与角色",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取设置用户组列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsGroupListResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "创建用户群组",
+                "parameters": [
+                    {
+                        "description": "群组信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsGroup"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/user-groups/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "更新用户群组",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "群组 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "群组信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsGroup"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "删除用户群组",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "群组 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取用户列表及有效角色与权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "获取设置用户列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsUserListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "创建用户",
+                "parameters": [
+                    {
+                        "description": "用户信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/users/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "更新用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "用户信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "删除用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerOKResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/settings/users/{id}/disabled": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统设置"
+                ],
+                "summary": "启用或禁用用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "启用或禁用",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsDisabledRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerSettingsUser"
+                        }
+                    }
+                }
+            }
+        },
+        "/download/backup-agent": {
+            "get": {
+                "description": "无需令牌的公开下载入口，按平台、架构与系统版本选择槽位，供首次部署直接拉取托管二进制",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "Agent 通道"
+                ],
+                "summary": "公开下载 Agent 二进制",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "平台，取值 linux 或 windows",
+                        "name": "platform",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CPU 架构，取值 amd64 或 arm64",
+                        "name": "arch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "通道，取值 standard 或 legacy",
+                        "name": "variant",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Windows 构建号，用于自动选包",
+                        "name": "osBuild",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "二进制文件，响应头含版本与 SHA-256",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "探测服务进程是否存活，无需认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "健康检查"
+                ],
+                "summary": "健康检查",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerHealthResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "domain.SessionUser": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.authLoginRequest": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.authLoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/domain.SessionUser"
+                }
+            }
+        },
+        "swagger.changePasswordBody": {
+            "type": "object",
+            "properties": {
+                "confirm_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string"
+                },
+                "old_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentBinaryLatestResponse": {
+            "type": "object",
+            "properties": {
+                "arch": {
+                    "type": "string"
+                },
+                "goVersion": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "variant": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentBinaryMeta": {
+            "type": "object",
+            "properties": {
+                "arch": {
+                    "type": "string"
+                },
+                "goVersion": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "uploadedAt": {
+                    "type": "string"
+                },
+                "variant": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentBinaryPushRequest": {
+            "type": "object",
+            "properties": {
+                "all": {
+                    "type": "boolean"
+                },
+                "ips": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentProfile": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/swagger.swaggerAgentProfileConfig"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentProfileConfig": {
+            "type": "object",
+            "properties": {
+                "artifactCheck": {
+                    "type": "boolean"
+                },
+                "artifactMaxDepth": {
+                    "type": "integer"
+                },
+                "artifactPreToleranceMinutes": {
+                    "type": "integer"
+                },
+                "autoUpdateMinutes": {
+                    "type": "integer"
+                },
+                "collectCrontab": {
+                    "type": "boolean"
+                },
+                "collectVeeam": {
+                    "type": "boolean"
+                },
+                "excludeKeywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "heartbeatIntervalSec": {
+                    "type": "integer"
+                },
+                "includeKeywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "includePaths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "labelPrefix": {
+                    "type": "string"
+                },
+                "manualTriggerMinutes": {
+                    "type": "integer"
+                },
+                "maxArtifactAgeHours": {
+                    "type": "integer"
+                },
+                "maxJobInfoCalls": {
+                    "type": "integer"
+                },
+                "maxSessionInfoCalls": {
+                    "type": "integer"
+                },
+                "maxSessionsPerJob": {
+                    "type": "integer"
+                },
+                "reportIntervalSec": {
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerAgentProfileRequest": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerAgentToken": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastSeenAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentTokenCreateRequest": {
+            "type": "object",
+            "properties": {
+                "hostname": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentTokenCreateResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAgentTokenRequest": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAlert": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "hostId": {
+                    "type": "string"
+                },
+                "hostName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "resolvedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskId": {
+                    "type": "string"
+                },
+                "taskName": {
+                    "type": "string"
+                },
+                "taskType": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerAuditHistoryItem": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "操作",
+                    "type": "string",
+                    "example": "用户登录"
+                },
+                "detail": {
+                    "description": "详情",
+                    "type": "string",
+                    "example": "登录成功（本地账号）"
+                },
+                "id": {
+                    "description": "编号",
+                    "type": "integer",
+                    "example": 1
+                },
+                "ip": {
+                    "description": "来源 IP",
+                    "type": "string",
+                    "example": "10.18.88.135"
+                },
+                "module": {
+                    "description": "模块",
+                    "type": "string",
+                    "example": "auth"
+                },
+                "result": {
+                    "description": "结果",
+                    "type": "string",
+                    "example": "success"
+                },
+                "target": {
+                    "description": "目标",
+                    "type": "string",
+                    "example": "1"
+                },
+                "targetTitle": {
+                    "type": "string",
+                    "example": "部门1、部门2"
+                },
+                "timestamp": {
+                    "description": "时间戳（Unix 秒）",
+                    "type": "integer",
+                    "example": 1725868800
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "swagger.swaggerAuditHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerAuditHistoryItem"
+                    }
+                },
+                "limit": {
+                    "description": "返回条数限制，-1 表示全部",
+                    "type": "integer",
+                    "example": -1
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer",
+                    "example": 78
+                }
+            }
+        },
+        "swagger.swaggerErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "错误信息",
+                    "type": "string",
+                    "example": "请求参数错误"
+                }
+            }
+        },
+        "swagger.swaggerExecution": {
+            "type": "object",
+            "properties": {
+                "artifactPath": {
+                    "type": "string"
+                },
+                "creationTime": {
+                    "type": "string"
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "exitCode": {
+                    "type": "integer"
+                },
+                "hostId": {
+                    "type": "string"
+                },
+                "hostName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "processedSize": {
+                    "type": "string"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "taskId": {
+                    "type": "string"
+                },
+                "taskName": {
+                    "type": "string"
+                },
+                "taskType": {
+                    "type": "string"
+                },
+                "transferredSize": {
+                    "type": "string"
+                },
+                "trigger": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerGenericObject": {
+            "type": "object",
+            "additionalProperties": true
+        },
+        "swagger.swaggerHealthResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "状态",
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        },
+        "swagger.swaggerHistoryClearRequest": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "description": "待清空的审计日志编号清单",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            }
+        },
+        "swagger.swaggerHistoryClearResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "description": "实际删除的记录条数",
+                    "type": "integer",
+                    "example": 12
+                }
+            }
+        },
+        "swagger.swaggerHistoryExportRequest": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "module": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerHost": {
+            "type": "object",
+            "properties": {
+                "agentStartedAt": {
+                    "type": "string"
+                },
+                "agentVersion": {
+                    "type": "string"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "lastReportTime": {
+                    "type": "string"
+                },
+                "nodeId": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerHostDetail": {
+            "type": "object",
+            "properties": {
+                "agentStartedAt": {
+                    "type": "string"
+                },
+                "agentVersion": {
+                    "type": "string"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "lastReportTime": {
+                    "type": "string"
+                },
+                "nodeId": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskCount": {
+                    "type": "integer"
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerTask"
+                    }
+                }
+            }
+        },
+        "swagger.swaggerHostRefreshGroup": {
+            "type": "object",
+            "properties": {
+                "hostIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "intervalSec": {
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerHostRefreshPlan": {
+            "type": "object",
+            "properties": {
+                "defaultIntervalSec": {
+                    "type": "integer"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerHostRefreshGroup"
+                    }
+                },
+                "minIntervalSec": {
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerHostRoleRequest": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerMessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "消息",
+                    "type": "string",
+                    "example": "操作成功"
+                }
+            }
+        },
+        "swagger.swaggerNotificationRecord": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "type": "string"
+                },
+                "channelName": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "hostName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "recipients": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "taskName": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerNotifyChannel": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "eventType": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "recover": {
+                    "type": "boolean"
+                },
+                "remainDays": {
+                    "type": "integer"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "triggerGroup": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerOKResponse": {
+            "type": "object",
+            "properties": {
+                "ok": {
+                    "description": "是否成功",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "swagger.swaggerPasswordResetCaptchaResponse": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "description": "过期时间",
+                    "type": "string"
+                },
+                "question": {
+                    "description": "图形验证码题目",
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerPasswordResetConfirmRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "邮箱验证码",
+                    "type": "string"
+                },
+                "confirmPassword": {
+                    "description": "确认新密码",
+                    "type": "string"
+                },
+                "newPassword": {
+                    "description": "新密码",
+                    "type": "string"
+                },
+                "verificationToken": {
+                    "description": "流程令牌",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerPasswordResetSendRequest": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "description": "接收渠道",
+                    "type": "string"
+                },
+                "verificationToken": {
+                    "description": "流程令牌",
+                    "type": "string"
+                },
+                "verifyEmail": {
+                    "description": "接收验证码的邮箱",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerPasswordResetSendResponse": {
+            "type": "object",
+            "properties": {
+                "cooldownSeconds": {
+                    "description": "发送冷却剩余秒数",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "状态",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerPasswordResetVerifyRequest": {
+            "type": "object",
+            "properties": {
+                "captchaAnswer": {
+                    "type": "string"
+                },
+                "captchaToken": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerPasswordResetVerifyResponse": {
+            "type": "object",
+            "properties": {
+                "channels": {
+                    "description": "可用的验证码接收渠道",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "verificationToken": {
+                    "description": "流程令牌",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerPublicAuthProvider": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "编号",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "类型",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerPublicAuthProvidersResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerPublicAuthProvider"
+                    }
+                },
+                "passwordResetEnabled": {
+                    "description": "是否启用找回密码",
+                    "type": "boolean"
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerPublicBrandingResponse": {
+            "type": "object",
+            "properties": {
+                "appName": {
+                    "description": "控制台品牌名称",
+                    "type": "string",
+                    "example": "Backup Monitor"
+                },
+                "appSubtitle": {
+                    "description": "控制台品牌副标题",
+                    "type": "string",
+                    "example": "IT Asset Management"
+                },
+                "iconData": {
+                    "description": "图标（站点路径或 Data URL）",
+                    "type": "string",
+                    "example": "/favicon.svg"
+                },
+                "loginName": {
+                    "description": "登录页品牌名称",
+                    "type": "string",
+                    "example": "Backup Monitor"
+                },
+                "siteName": {
+                    "description": "网站名称",
+                    "type": "string",
+                    "example": "Backup Monitor"
+                }
+            }
+        },
+        "swagger.swaggerSettingsAuthProviderRequest": {
+            "type": "object",
+            "properties": {
+                "clearConfig": {
+                    "description": "是否清空已有配置",
+                    "type": "boolean"
+                },
+                "config": {
+                    "description": "认证配置",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "显示名称",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerSettingsAuthProviderResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "description": "配置内容",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "编号",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "类型",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerSettingsDisabledRequest": {
+            "type": "object",
+            "properties": {
+                "disabled": {
+                    "description": "是否禁用",
+                    "type": "boolean"
+                }
+            }
+        },
+        "swagger.swaggerSettingsEmailRequest": {
+            "type": "object",
+            "properties": {
+                "clearConfig": {
+                    "description": "是否清空已有配置",
+                    "type": "boolean"
+                },
+                "config": {
+                    "description": "邮件配置",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "passwordResetEnabled": {
+                    "description": "是否启用邮件找回密码",
+                    "type": "boolean"
+                }
+            }
+        },
+        "swagger.swaggerSettingsEmailResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "description": "配置内容",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "id": {
+                    "description": "编号",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "passwordResetEnabled": {
+                    "description": "是否启用找回密码",
+                    "type": "boolean"
+                },
+                "updatedAt": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerSettingsGroup": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "disabled": {
+                    "description": "是否禁用",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "编号",
+                    "type": "string"
+                },
+                "members": {
+                    "description": "群组成员",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsUser"
+                    }
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": "有效角色",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                    }
+                }
+            }
+        },
+        "swagger.swaggerSettingsGroupListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsGroup"
+                    }
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerSettingsGroupRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "disabled": {
+                    "description": "是否禁用",
+                    "type": "boolean"
+                },
+                "memberIds": {
+                    "description": "成员用户 ID 集合",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "roleKeys": {
+                    "description": "角色标识集合",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "swagger.swaggerSettingsRole": {
+            "type": "object",
+            "properties": {
+                "builtin": {
+                    "description": "是否内置",
+                    "type": "boolean"
+                },
+                "createdAt": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "disabled": {
+                    "description": "是否禁用",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "编号",
+                    "type": "string"
+                },
+                "key": {
+                    "description": "角色标识",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "权限标识集合",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updatedAt": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerSettingsRoleListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                    }
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerSettingsRoleRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "key": {
+                    "description": "角色标识",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "权限标识集合",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "swagger.swaggerSettingsUser": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "directRoles": {
+                    "description": "直接分配角色",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                    }
+                },
+                "disabled": {
+                    "description": "是否禁用",
+                    "type": "boolean"
+                },
+                "displayName": {
+                    "description": "显示名称",
+                    "type": "string"
+                },
+                "effectiveUserPermissions": {
+                    "description": "有效权限清单",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "effectiveUserRoles": {
+                    "description": "有效角色",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                    }
+                },
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "编号",
+                    "type": "string"
+                },
+                "lastLoginAt": {
+                    "description": "最近登录时间",
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "权限标识集合",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "role": {
+                    "description": "主角色",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": "有效角色",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsRole"
+                    }
+                },
+                "source": {
+                    "description": "账号来源",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerSettingsUserListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/swagger.swaggerSettingsUser"
+                    }
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer"
+                }
+            }
+        },
+        "swagger.swaggerSettingsUserRequest": {
+            "type": "object",
+            "properties": {
+                "disabled": {
+                    "description": "是否禁用",
+                    "type": "boolean"
+                },
+                "displayName": {
+                    "description": "显示名称",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "登录密码，更新时留空表示不修改",
+                    "type": "string"
+                },
+                "roleKeys": {
+                    "description": "角色标识集合",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerSystemBaseConfig": {
+            "type": "object",
+            "properties": {
+                "appName": {
+                    "description": "控制台品牌名称",
+                    "type": "string",
+                    "example": "Backup Monitor"
+                },
+                "appSubtitle": {
+                    "description": "控制台品牌副标题",
+                    "type": "string",
+                    "example": "IT Asset Management"
+                },
+                "backupCron": {
+                    "description": "定时备份 Cron 表达式",
+                    "type": "string",
+                    "example": "0 0 * * *"
+                },
+                "backupEnabled": {
+                    "description": "是否启用定时备份",
+                    "type": "boolean"
+                },
+                "backupRetentionDays": {
+                    "description": "备份保留天数（0 为永久）",
+                    "type": "integer",
+                    "example": 30
+                },
+                "iconData": {
+                    "description": "图标（站点路径或 Data URL）",
+                    "type": "string",
+                    "example": "/favicon.svg"
+                },
+                "loginName": {
+                    "description": "登录页品牌名称",
+                    "type": "string",
+                    "example": "Backup Monitor"
+                },
+                "passwordResetRateLimitMinutes": {
+                    "description": "发送限流统计窗口（分钟）",
+                    "type": "integer",
+                    "example": 5
+                },
+                "passwordResetSendCooldownMinutes": {
+                    "description": "验证码发送冷却（分钟）",
+                    "type": "number",
+                    "example": 0.5
+                },
+                "resetCaptchaTtlMinutes": {
+                    "description": "图形验证码有效期（分钟）",
+                    "type": "integer",
+                    "example": 1
+                },
+                "resetCodeTtlMinutes": {
+                    "description": "找回密码验证码有效期（分钟）",
+                    "type": "integer",
+                    "example": 10
+                },
+                "section": {
+                    "type": "string",
+                    "example": "brand"
+                },
+                "siteName": {
+                    "description": "网站名称",
+                    "type": "string",
+                    "example": "Backup Monitor"
+                },
+                "wecomStateTtlMinutes": {
+                    "description": "企业微信扫码有效期（分钟）",
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "swagger.swaggerTask": {
+            "type": "object",
+            "properties": {
+                "hostId": {
+                    "type": "string"
+                },
+                "hostIp": {
+                    "type": "string"
+                },
+                "hostName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "schedule": {
+                    "type": "string"
+                },
+                "scheduleCron": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskKey": {
+                    "type": "string"
+                },
+                "tool": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerTaskScheduleRequest": {
+            "type": "object",
+            "properties": {
+                "scheduleCron": {
+                    "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerWecomAuthorizeEmbed": {
+            "type": "object",
+            "properties": {
+                "auth_mode": {
+                    "description": "认证方式：direct=直连企业微信，sso=统一认证中心",
+                    "type": "string",
+                    "example": "direct"
+                },
+                "callback_path": {
+                    "description": "iframe 内扫码确认后的回跳路径：直连模式 /wecom-qr-callback，统一认证中心模式 /login",
+                    "type": "string",
+                    "example": "/wecom-qr-callback"
+                },
+                "iframe_url": {
+                    "description": "内嵌 iframe 加载的扫码页地址：直连模式为企微登录页（回跳 /wecom-qr-callback），SSO 模式为认证中心入口",
+                    "type": "string",
+                    "example": "https://login.work.weixin.qq.com/wwlogin/sso/login?login_type=CorpApp\u0026appid=ww123\u0026redirect_uri=https%3A%2F%2Fexample.com%2Fwecom-qr-callback"
+                },
+                "state": {
+                    "description": "直连模式签发的防伪状态串，SSO 模式为空",
+                    "type": "string",
+                    "example": "eyJwIjoibG9naW4iLCJlIjoxNzI2LCJuIjoiYTFiMmMzIn0.5f8a"
+                }
+            }
+        },
+        "swagger.swaggerWecomAuthorizeResponse": {
+            "type": "object",
+            "properties": {
+                "embed": {
+                    "description": "内嵌二维码渲染参数，SSO 与直连模式返回，其余场景缺失表示仅支持整页跳转",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/swagger.swaggerWecomAuthorizeEmbed"
+                        }
+                    ]
+                },
+                "url": {
+                    "description": "企业微信扫码页跳转地址（整页跳转降级用）",
+                    "type": "string",
+                    "example": "https://login.work.weixin.qq.com/wwlogin/sso/login?login_type=CorpApp\u0026appid=ww123"
+                }
+            }
+        },
+        "swagger.swaggerWecomBindResponse": {
+            "type": "object",
+            "properties": {
+                "ok": {
+                    "description": "是否成功",
+                    "type": "boolean",
+                    "example": true
+                },
+                "wecomUserid": {
+                    "description": "绑定的企业微信成员 userid",
+                    "type": "string",
+                    "example": "zhangsan"
+                }
+            }
+        },
+        "swagger.swaggerWecomCallbackRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "企业微信回调携带的授权码",
+                    "type": "string",
+                    "example": "abc123"
+                },
+                "state": {
+                    "description": "发起跳转时签发的防伪状态串",
+                    "type": "string",
+                    "example": "eyJwIjoibG9naW4iLCJlIjoxNzI2LCJuIjoiYTFiMmMzIn0.5f8a"
+                }
+            }
+        },
+        "swagger.swaggerWecomProvider": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "description": "配置项",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/swagger.swaggerWecomProviderConfig"
+                        }
+                    ]
+                },
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
+                },
+                "id": {
+                    "description": "提供者标识",
+                    "type": "string",
+                    "example": "wecom"
+                },
+                "name": {
+                    "description": "显示名称",
+                    "type": "string",
+                    "example": "企业微信"
+                },
+                "type": {
+                    "description": "提供者类型",
+                    "type": "string",
+                    "example": "wecom"
+                },
+                "updatedAt": {
+                    "description": "更新时间",
+                    "type": "string",
+                    "example": "2026-09-18 12:00:00"
+                }
+            }
+        },
+        "swagger.swaggerWecomProviderConfig": {
+            "type": "object",
+            "properties": {
+                "agentid": {
+                    "description": "应用 AgentID",
+                    "type": "string",
+                    "example": "1000002"
+                },
+                "authMode": {
+                    "description": "认证方式：direct=直连企业微信，sso=统一认证中心",
+                    "type": "string",
+                    "example": "direct"
+                },
+                "corpid": {
+                    "description": "企业 ID（corpid）",
+                    "type": "string",
+                    "example": "ww1234567890"
+                },
+                "hasSecret": {
+                    "description": "是否已配置应用 Secret",
+                    "type": "boolean",
+                    "example": true
+                },
+                "hasSsoAppSecret": {
+                    "description": "是否已配置应用密钥（SSO 模式）",
+                    "type": "boolean",
+                    "example": true
+                },
+                "redirectPrefix": {
+                    "description": "回调地址前缀（可选，留空时按当前访问地址推断，不含 /login 路径）",
+                    "type": "string",
+                    "example": "https://example.com"
+                },
+                "ssoAppID": {
+                    "description": "统一认证中心应用标识（SSO 模式）",
+                    "type": "string",
+                    "example": "wecom-app"
+                },
+                "ssoBaseUrl": {
+                    "description": "统一认证中心地址（SSO 模式）",
+                    "type": "string",
+                    "example": "https://auth.example.com"
+                }
+            }
+        },
+        "swagger.swaggerWecomProviderRequest": {
+            "type": "object",
+            "properties": {
+                "clearConfig": {
+                    "description": "是否清空已存 Secret",
+                    "type": "boolean",
+                    "example": false
+                },
+                "config": {
+                    "description": "配置项（secret 仅在更换时传入）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/swagger.swaggerWecomProviderSaveConfig"
+                        }
+                    ]
+                },
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "显示名称",
+                    "type": "string",
+                    "example": "企业微信"
+                }
+            }
+        },
+        "swagger.swaggerWecomProviderSaveConfig": {
+            "type": "object",
+            "properties": {
+                "agentid": {
+                    "description": "应用 AgentID",
+                    "type": "string",
+                    "example": "1000002"
+                },
+                "authMode": {
+                    "description": "认证方式：direct=直连企业微信，sso=统一认证中心",
+                    "type": "string",
+                    "example": "direct"
+                },
+                "corpid": {
+                    "description": "企业 ID（corpid）",
+                    "type": "string",
+                    "example": "ww1234567890"
+                },
+                "redirectPrefix": {
+                    "description": "回调地址前缀（可选，留空时按当前访问地址推断，不含 /login 路径）",
+                    "type": "string",
+                    "example": "https://example.com"
+                },
+                "secret": {
+                    "description": "应用 Secret",
+                    "type": "string",
+                    "example": "j8Kx2pQ"
+                },
+                "ssoAppID": {
+                    "description": "统一认证中心应用标识（SSO 模式）",
+                    "type": "string",
+                    "example": "wecom-app"
+                },
+                "ssoAppSecret": {
+                    "description": "应用密钥（SSO 模式，仅在更换时传入）",
+                    "type": "string",
+                    "example": "9f2c1a3e4b5d6f708192a3b4c5d6e7f0"
+                },
+                "ssoBaseUrl": {
+                    "description": "统一认证中心地址（SSO 模式）",
+                    "type": "string",
+                    "example": "https://auth.example.com"
+                }
+            }
+        },
+        "swagger.swaggerWecomSSORequest": {
+            "type": "object",
+            "properties": {
+                "ticket": {
+                    "description": "统一认证中心回跳携带的一次性登录凭证",
+                    "type": "string",
+                    "example": "9f2c1a3e4b5d6f708192a3b4c5d6e7f0"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

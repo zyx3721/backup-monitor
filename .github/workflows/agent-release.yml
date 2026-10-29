@@ -1,0 +1,191 @@
+name: Agent Release
+
+# Agent 独立发布线：推送 agent-v* 标签触发，只构建 4 个平台的 Agent 二进制，
+# 与应用发布（v* → ci.yml）互不干扰。
+#
+# 版本号由发布者在打标签前改好（见 AGENTS.md 4.6），这里只做校验：
+# 源码版本号与标签不一致时直接失败，避免产出「-version 显示新版本、
+# 管理端识别旧版本」的包。
+
+on:
+  push:
+    tags: ["agent-v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号（如 1.2.3，不含 agent-v 前缀）"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 解析版本号
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            TAG="agent-v${VERSION}"
+          else
+            VERSION="${GITHUB_REF_NAME#agent-v}"
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::版本号格式不合法: ${VERSION}（应为 X.Y.Z）"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "📦 Agent 版本 ${VERSION}（标签 ${TAG}）"
+
+      - name: 设置 Go 环境
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.22'
+          cache-dependency-path: agent/go.sum
+
+      - name: 校验源码版本号
+        working-directory: agent
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          if ! grep -q "var Version = \"${VERSION}\"" internal/config/types.go; then
+            echo "::error::internal/config/types.go 的 Version 不是 ${VERSION}，请先改代码再打标签"
+            exit 1
+          fi
+          if ! grep -q "backup-agent-version:${VERSION}" cmd/backup-agent/version_marker.go; then
+            echo "::error::cmd/backup-agent/version_marker.go 的标记不是 ${VERSION}，请先改代码再打标签"
+            exit 1
+          fi
+          echo "版本号校验通过：${VERSION}"
+
+      - name: 交叉编译并打包
+        working-directory: agent
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for target in "linux amd64 tar" "linux arm64 tar" "windows amd64 zip" "windows arm64 zip"; do
+            set -- $target
+            GOOS="$1"; GOARCH="$2"; FORMAT="$3"
+            EXT=""
+            if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
+            PKG="backup-agent_${GOOS}_${GOARCH}"
+            mkdir -p "dist/${PKG}"
+            echo "🔨 编译 ${GOOS}/${GOARCH}..."
+            CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" \
+              go build -trimpath -ldflags "-s -w" -o "dist/${PKG}/backup-agent${EXT}" ./cmd/backup-agent
+            cp backup-agent.example.json "dist/${PKG}/"
+            printf '%s\n\n%s\n%s\n%s\n%s\n' \
+              "Backup Monitor Agent ${VERSION} (${GOOS}/${GOARCH})" \
+              "1. 复制 backup-agent.example.json 为 backup-agent.json，填入 serverUrl 与 token" \
+              "2. 前台试运行：./backup-agent${EXT} -once" \
+              "3. 安装为系统服务：./backup-agent${EXT} -install" \
+              "4. 完整说明：https://github.com/zyx3721/backup-monitor/blob/main/agent/README.md" \
+              > "dist/${PKG}/README.txt"
+            if [ "$FORMAT" = "zip" ]; then
+              (cd dist && zip -qr "backup-agent_${VERSION}_${GOOS}_${GOARCH}.zip" "${PKG}")
+            else
+              tar -czf "dist/backup-agent_${VERSION}_${GOOS}_${GOARCH}.tar.gz" -C dist "${PKG}"
+            fi
+            rm -rf "dist/${PKG}"
+          done
+          echo "产物清单："
+          ls -lh dist/
+
+      - name: 构建 Windows legacy（Go 1.20）
+        working-directory: agent
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          go install golang.org/dl/go1.20.14@latest
+          GO120="$(go env GOPATH)/bin/go1.20.14"
+          "$GO120" download
+          PKG="backup-agent_windows_amd64_legacy"
+          mkdir -p "dist/${PKG}"
+          echo "🔨 编译 legacy windows/amd64..."
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
+            "$GO120" build -modfile go.legacy.mod -trimpath -ldflags "-s -w" \
+            -o "dist/${PKG}/backup-agent.exe" ./cmd/backup-agent
+          cp backup-agent.example.json "dist/${PKG}/"
+          printf '%s\n\n%s\n%s\n%s\n' \
+            "Backup Monitor Agent ${VERSION} (windows/amd64, legacy for Windows 7 / Server 2008 R2)" \
+            "1. 复制 backup-agent.example.json 为 backup-agent.json，填入 serverUrl 与 token" \
+            "2. 安装为系统服务：backup-agent.exe -install" \
+            "3. 完整说明：https://github.com/zyx3721/backup-monitor/blob/main/agent/README.md" \
+            > "dist/${PKG}/README.txt"
+          (cd dist && zip -qr "backup-agent_${VERSION}_windows_amd64_legacy.zip" "${PKG}")
+          rm -rf "dist/${PKG}"
+          ls -lh dist/
+
+      - name: 生成校验和
+        working-directory: agent/dist
+        run: |
+          sha256sum backup-agent_*.tar.gz backup-agent_*.zip > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: 生成 Release 说明
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          mkdir -p release-assets-agent
+          cp agent/dist/SHA256SUMS release-assets-agent/SHA256SUMS
+          {
+            echo "## 🎉 Backup Monitor Agent v${VERSION}"
+            echo
+            echo "### 📋 构建信息"
+            echo "- **版本**: v${VERSION}"
+            echo "- **Commit**: ${GITHUB_SHA:0:7}"
+            echo "- **构建时间**: $(TZ=Asia/Shanghai date +"%Y-%m-%dT%H:%M:%S%:z")"
+            echo
+            echo "### 📝 最近的 Agent 变更"
+            echo
+            git log --no-merges --max-count=20 --pretty='- %s (%h)' -- agent/ || true
+            echo
+            echo "### 📦 产物"
+            echo
+            echo "| 平台 | 架构 | 文件 |"
+            echo "| --- | --- | --- |"
+            echo "| Linux | amd64 | \`backup-agent_${VERSION}_linux_amd64.tar.gz\` |"
+            echo "| Linux | arm64 | \`backup-agent_${VERSION}_linux_arm64.tar.gz\` |"
+            echo "| Windows | amd64 | \`backup-agent_${VERSION}_windows_amd64.zip\` |"
+            echo "| Windows | arm64 | \`backup-agent_${VERSION}_windows_arm64.zip\` |"
+            echo "| Windows | amd64 legacy | \`backup-agent_${VERSION}_windows_amd64_legacy.zip\` |"
+            echo
+            echo "### ⬆️ 升级方式"
+            echo
+            echo "管理端「Agent 管理 → Agent 更新」上传对应平台二进制即可推送升级；也可停服务后用新二进制覆盖原文件再启动。"
+            echo
+            echo "Windows 7 / Server 2008 R2 使用 \`*_windows_amd64_legacy.zip\`，只能停服务后手工覆盖，不要上传管理端（会覆盖常规 Windows 包）。"
+            echo
+            echo "### 🔐 校验和"
+            echo
+            echo '```bash'
+            echo "sha256sum -c SHA256SUMS"
+            echo '```'
+          } > release_notes.md
+          cat release_notes.md
+
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: Agent v${{ steps.ver.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          files: |
+            agent/dist/*.tar.gz
+            agent/dist/*.zip
+            release-assets-agent/SHA256SUMS

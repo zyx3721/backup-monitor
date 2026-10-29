@@ -1,0 +1,10 @@
+{
+  "serverUrl": "",
+  "token": "",
+  "hostname": "",
+  "intervalSec": 0,
+  "role": "database",
+  "logFile": "",
+  "logMaxMb": 10,
+  "logBackups": 2
+}

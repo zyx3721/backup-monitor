@@ -1,0 +1,18 @@
+services:
+  backup-monitor:
+    image: registry.cn-shenzhen.aliyuncs.com/zyx3721/backup-monitor:latest
+    container_name: backup-monitor
+    privileged: true
+    restart: unless-stopped
+    networks:
+      - backup_monitor_network
+    ports:
+      - 80:80
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+
+networks:
+  backup_monitor_network:
+    driver: bridge

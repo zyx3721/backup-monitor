@@ -1,0 +1,3393 @@
+basePath: /
+definitions:
+  domain.SessionUser:
+    properties:
+      id:
+        type: integer
+      source:
+        type: string
+      username:
+        type: string
+    type: object
+  swagger.authLoginRequest:
+    properties:
+      mode:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  swagger.authLoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/domain.SessionUser'
+    type: object
+  swagger.changePasswordBody:
+    properties:
+      confirm_password:
+        type: string
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  swagger.swaggerAgentBinaryLatestResponse:
+    properties:
+      arch:
+        type: string
+      goVersion:
+        type: string
+      sha256:
+        type: string
+      size:
+        type: integer
+      variant:
+        type: string
+      version:
+        type: string
+    type: object
+  swagger.swaggerAgentBinaryMeta:
+    properties:
+      arch:
+        type: string
+      goVersion:
+        type: string
+      platform:
+        type: string
+      sha256:
+        type: string
+      size:
+        type: integer
+      uploadedAt:
+        type: string
+      variant:
+        type: string
+      version:
+        type: string
+    type: object
+  swagger.swaggerAgentBinaryPushRequest:
+    properties:
+      all:
+        type: boolean
+      ips:
+        type: string
+      platform:
+        type: string
+    type: object
+  swagger.swaggerAgentProfile:
+    properties:
+      config:
+        $ref: '#/definitions/swagger.swaggerAgentProfileConfig'
+      createdAt:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      hostname:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      priority:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  swagger.swaggerAgentProfileConfig:
+    properties:
+      artifactCheck:
+        type: boolean
+      artifactMaxDepth:
+        type: integer
+      artifactPreToleranceMinutes:
+        type: integer
+      autoUpdateMinutes:
+        type: integer
+      collectCrontab:
+        type: boolean
+      collectVeeam:
+        type: boolean
+      excludeKeywords:
+        items:
+          type: string
+        type: array
+      heartbeatIntervalSec:
+        type: integer
+      includeKeywords:
+        items:
+          type: string
+        type: array
+      includePaths:
+        items:
+          type: string
+        type: array
+      labelPrefix:
+        type: string
+      manualTriggerMinutes:
+        type: integer
+      maxArtifactAgeHours:
+        type: integer
+      maxJobInfoCalls:
+        type: integer
+      maxSessionInfoCalls:
+        type: integer
+      maxSessionsPerJob:
+        type: integer
+      reportIntervalSec:
+        type: integer
+    type: object
+  swagger.swaggerAgentProfileRequest:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      description:
+        type: string
+      enabled:
+        type: boolean
+      hostname:
+        type: string
+      name:
+        type: string
+      priority:
+        type: integer
+    type: object
+  swagger.swaggerAgentToken:
+    properties:
+      createdAt:
+        type: string
+      enabled:
+        type: boolean
+      hostname:
+        type: string
+      id:
+        type: string
+      lastSeenAt:
+        type: string
+      name:
+        type: string
+      token:
+        type: string
+    type: object
+  swagger.swaggerAgentTokenCreateRequest:
+    properties:
+      hostname:
+        type: string
+      name:
+        type: string
+      token:
+        type: string
+    type: object
+  swagger.swaggerAgentTokenCreateResponse:
+    properties:
+      name:
+        type: string
+      token:
+        type: string
+    type: object
+  swagger.swaggerAgentTokenRequest:
+    properties:
+      enabled:
+        type: boolean
+      hostname:
+        type: string
+      name:
+        type: string
+    type: object
+  swagger.swaggerAlert:
+    properties:
+      createdAt:
+        type: string
+      hostId:
+        type: string
+      hostName:
+        type: string
+      id:
+        type: string
+      level:
+        type: string
+      message:
+        type: string
+      resolvedAt:
+        type: string
+      status:
+        type: string
+      taskId:
+        type: string
+      taskName:
+        type: string
+      taskType:
+        type: string
+      type:
+        type: string
+    type: object
+  swagger.swaggerAuditHistoryItem:
+    properties:
+      action:
+        description: 操作
+        example: 用户登录
+        type: string
+      detail:
+        description: 详情
+        example: 登录成功（本地账号）
+        type: string
+      id:
+        description: 编号
+        example: 1
+        type: integer
+      ip:
+        description: 来源 IP
+        example: 10.18.88.135
+        type: string
+      module:
+        description: 模块
+        example: auth
+        type: string
+      result:
+        description: 结果
+        example: success
+        type: string
+      target:
+        description: 目标
+        example: "1"
+        type: string
+      targetTitle:
+        example: 部门1、部门2
+        type: string
+      timestamp:
+        description: 时间戳（Unix 秒）
+        example: 1725868800
+        type: integer
+      username:
+        description: 用户名
+        example: admin
+        type: string
+    type: object
+  swagger.swaggerAuditHistoryResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/swagger.swaggerAuditHistoryItem'
+        type: array
+      limit:
+        description: 返回条数限制，-1 表示全部
+        example: -1
+        type: integer
+      total:
+        description: 总数
+        example: 78
+        type: integer
+    type: object
+  swagger.swaggerErrorResponse:
+    properties:
+      error:
+        description: 错误信息
+        example: 请求参数错误
+        type: string
+    type: object
+  swagger.swaggerExecution:
+    properties:
+      artifactPath:
+        type: string
+      creationTime:
+        type: string
+      endTime:
+        type: string
+      exitCode:
+        type: integer
+      hostId:
+        type: string
+      hostName:
+        type: string
+      id:
+        type: string
+      message:
+        type: string
+      processedSize:
+        type: string
+      sessionId:
+        type: string
+      startTime:
+        type: string
+      state:
+        type: string
+      taskId:
+        type: string
+      taskName:
+        type: string
+      taskType:
+        type: string
+      transferredSize:
+        type: string
+      trigger:
+        type: string
+    type: object
+  swagger.swaggerGenericObject:
+    additionalProperties: true
+    type: object
+  swagger.swaggerHealthResponse:
+    properties:
+      status:
+        description: 状态
+        example: ok
+        type: string
+    type: object
+  swagger.swaggerHistoryClearRequest:
+    properties:
+      ids:
+        description: 待清空的审计日志编号清单
+        example:
+        - 1
+        - 2
+        - 3
+        items:
+          type: integer
+        type: array
+    type: object
+  swagger.swaggerHistoryClearResponse:
+    properties:
+      deleted:
+        description: 实际删除的记录条数
+        example: 12
+        type: integer
+    type: object
+  swagger.swaggerHistoryExportRequest:
+    properties:
+      count:
+        type: integer
+      module:
+        type: string
+    type: object
+  swagger.swaggerHost:
+    properties:
+      agentStartedAt:
+        type: string
+      agentVersion:
+        type: string
+      hostname:
+        type: string
+      id:
+        type: string
+      ip:
+        type: string
+      lastReportTime:
+        type: string
+      nodeId:
+        type: string
+      os:
+        type: string
+      platform:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+      taskCount:
+        type: integer
+    type: object
+  swagger.swaggerHostDetail:
+    properties:
+      agentStartedAt:
+        type: string
+      agentVersion:
+        type: string
+      hostname:
+        type: string
+      id:
+        type: string
+      ip:
+        type: string
+      lastReportTime:
+        type: string
+      nodeId:
+        type: string
+      os:
+        type: string
+      platform:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+      taskCount:
+        type: integer
+      tasks:
+        items:
+          $ref: '#/definitions/swagger.swaggerTask'
+        type: array
+    type: object
+  swagger.swaggerHostRefreshGroup:
+    properties:
+      hostIds:
+        items:
+          type: string
+        type: array
+      intervalSec:
+        type: integer
+    type: object
+  swagger.swaggerHostRefreshPlan:
+    properties:
+      defaultIntervalSec:
+        type: integer
+      groups:
+        items:
+          $ref: '#/definitions/swagger.swaggerHostRefreshGroup'
+        type: array
+      minIntervalSec:
+        type: integer
+    type: object
+  swagger.swaggerHostRoleRequest:
+    properties:
+      role:
+        type: string
+    type: object
+  swagger.swaggerMessageResponse:
+    properties:
+      message:
+        description: 消息
+        example: 操作成功
+        type: string
+    type: object
+  swagger.swaggerNotificationRecord:
+    properties:
+      channel:
+        type: string
+      channelName:
+        type: string
+      createdAt:
+        type: string
+      error:
+        type: string
+      hostName:
+        type: string
+      id:
+        type: string
+      level:
+        type: string
+      message:
+        type: string
+      recipients:
+        type: string
+      status:
+        type: string
+      subject:
+        type: string
+      taskName:
+        type: string
+      type:
+        type: string
+    type: object
+  swagger.swaggerNotifyChannel:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      createdAt:
+        type: string
+      enabled:
+        type: boolean
+      eventType:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      level:
+        type: string
+      name:
+        type: string
+      recover:
+        type: boolean
+      remainDays:
+        type: integer
+      remark:
+        type: string
+      triggerGroup:
+        type: string
+      type:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  swagger.swaggerOKResponse:
+    properties:
+      ok:
+        description: 是否成功
+        example: true
+        type: boolean
+    type: object
+  swagger.swaggerPasswordResetCaptchaResponse:
+    properties:
+      expiresAt:
+        description: 过期时间
+        type: string
+      question:
+        description: 图形验证码题目
+        type: string
+      token:
+        type: string
+    type: object
+  swagger.swaggerPasswordResetConfirmRequest:
+    properties:
+      code:
+        description: 邮箱验证码
+        type: string
+      confirmPassword:
+        description: 确认新密码
+        type: string
+      newPassword:
+        description: 新密码
+        type: string
+      verificationToken:
+        description: 流程令牌
+        type: string
+    type: object
+  swagger.swaggerPasswordResetSendRequest:
+    properties:
+      channel:
+        description: 接收渠道
+        type: string
+      verificationToken:
+        description: 流程令牌
+        type: string
+      verifyEmail:
+        description: 接收验证码的邮箱
+        type: string
+    type: object
+  swagger.swaggerPasswordResetSendResponse:
+    properties:
+      cooldownSeconds:
+        description: 发送冷却剩余秒数
+        type: integer
+      status:
+        description: 状态
+        type: string
+    type: object
+  swagger.swaggerPasswordResetVerifyRequest:
+    properties:
+      captchaAnswer:
+        type: string
+      captchaToken:
+        type: string
+      username:
+        description: 用户名
+        type: string
+    type: object
+  swagger.swaggerPasswordResetVerifyResponse:
+    properties:
+      channels:
+        description: 可用的验证码接收渠道
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      verificationToken:
+        description: 流程令牌
+        type: string
+    type: object
+  swagger.swaggerPublicAuthProvider:
+    properties:
+      enabled:
+        description: 是否启用
+        type: boolean
+      id:
+        description: 编号
+        type: string
+      name:
+        description: 名称
+        type: string
+      type:
+        description: 类型
+        type: string
+    type: object
+  swagger.swaggerPublicAuthProvidersResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/swagger.swaggerPublicAuthProvider'
+        type: array
+      passwordResetEnabled:
+        description: 是否启用找回密码
+        type: boolean
+      total:
+        description: 总数
+        type: integer
+    type: object
+  swagger.swaggerPublicBrandingResponse:
+    properties:
+      appName:
+        description: 控制台品牌名称
+        example: Backup Monitor
+        type: string
+      appSubtitle:
+        description: 控制台品牌副标题
+        example: IT Asset Management
+        type: string
+      iconData:
+        description: 图标（站点路径或 Data URL）
+        example: /favicon.svg
+        type: string
+      loginName:
+        description: 登录页品牌名称
+        example: Backup Monitor
+        type: string
+      siteName:
+        description: 网站名称
+        example: Backup Monitor
+        type: string
+    type: object
+  swagger.swaggerSettingsAuthProviderRequest:
+    properties:
+      clearConfig:
+        description: 是否清空已有配置
+        type: boolean
+      config:
+        additionalProperties: true
+        description: 认证配置
+        type: object
+      enabled:
+        description: 是否启用
+        type: boolean
+      name:
+        description: 显示名称
+        type: string
+    type: object
+  swagger.swaggerSettingsAuthProviderResponse:
+    properties:
+      config:
+        additionalProperties: true
+        description: 配置内容
+        type: object
+      enabled:
+        description: 是否启用
+        type: boolean
+      id:
+        description: 编号
+        type: string
+      name:
+        description: 名称
+        type: string
+      type:
+        description: 类型
+        type: string
+      updatedAt:
+        description: 更新时间
+        type: string
+    type: object
+  swagger.swaggerSettingsDisabledRequest:
+    properties:
+      disabled:
+        description: 是否禁用
+        type: boolean
+    type: object
+  swagger.swaggerSettingsEmailRequest:
+    properties:
+      clearConfig:
+        description: 是否清空已有配置
+        type: boolean
+      config:
+        additionalProperties: true
+        description: 邮件配置
+        type: object
+      passwordResetEnabled:
+        description: 是否启用邮件找回密码
+        type: boolean
+    type: object
+  swagger.swaggerSettingsEmailResponse:
+    properties:
+      config:
+        additionalProperties: true
+        description: 配置内容
+        type: object
+      id:
+        description: 编号
+        type: string
+      name:
+        description: 名称
+        type: string
+      passwordResetEnabled:
+        description: 是否启用找回密码
+        type: boolean
+      updatedAt:
+        description: 更新时间
+        type: string
+    type: object
+  swagger.swaggerSettingsGroup:
+    properties:
+      description:
+        description: 描述
+        type: string
+      disabled:
+        description: 是否禁用
+        type: boolean
+      id:
+        description: 编号
+        type: string
+      members:
+        description: 群组成员
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsUser'
+        type: array
+      name:
+        description: 名称
+        type: string
+      roles:
+        description: 有效角色
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsRole'
+        type: array
+    type: object
+  swagger.swaggerSettingsGroupListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsGroup'
+        type: array
+      total:
+        description: 总数
+        type: integer
+    type: object
+  swagger.swaggerSettingsGroupRequest:
+    properties:
+      description:
+        description: 描述
+        type: string
+      disabled:
+        description: 是否禁用
+        type: boolean
+      memberIds:
+        description: 成员用户 ID 集合
+        items:
+          type: string
+        type: array
+      name:
+        description: 名称
+        type: string
+      roleKeys:
+        description: 角色标识集合
+        items:
+          type: string
+        type: array
+    type: object
+  swagger.swaggerSettingsRole:
+    properties:
+      builtin:
+        description: 是否内置
+        type: boolean
+      createdAt:
+        description: 创建时间
+        type: string
+      description:
+        description: 描述
+        type: string
+      disabled:
+        description: 是否禁用
+        type: boolean
+      id:
+        description: 编号
+        type: string
+      key:
+        description: 角色标识
+        type: string
+      name:
+        description: 名称
+        type: string
+      permissions:
+        description: 权限标识集合
+        items:
+          type: string
+        type: array
+      updatedAt:
+        description: 更新时间
+        type: string
+    type: object
+  swagger.swaggerSettingsRoleListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsRole'
+        type: array
+      total:
+        description: 总数
+        type: integer
+    type: object
+  swagger.swaggerSettingsRoleRequest:
+    properties:
+      description:
+        description: 描述
+        type: string
+      key:
+        description: 角色标识
+        type: string
+      name:
+        description: 名称
+        type: string
+      permissions:
+        description: 权限标识集合
+        items:
+          type: string
+        type: array
+    type: object
+  swagger.swaggerSettingsUser:
+    properties:
+      createdAt:
+        description: 创建时间
+        type: string
+      directRoles:
+        description: 直接分配角色
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsRole'
+        type: array
+      disabled:
+        description: 是否禁用
+        type: boolean
+      displayName:
+        description: 显示名称
+        type: string
+      effectiveUserPermissions:
+        description: 有效权限清单
+        items:
+          type: string
+        type: array
+      effectiveUserRoles:
+        description: 有效角色
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsRole'
+        type: array
+      email:
+        description: 邮箱
+        type: string
+      id:
+        description: 编号
+        type: string
+      lastLoginAt:
+        description: 最近登录时间
+        type: string
+      permissions:
+        description: 权限标识集合
+        items:
+          type: string
+        type: array
+      role:
+        description: 主角色
+        type: string
+      roles:
+        description: 有效角色
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsRole'
+        type: array
+      source:
+        description: 账号来源
+        type: string
+      username:
+        description: 用户名
+        type: string
+    type: object
+  swagger.swaggerSettingsUserListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/swagger.swaggerSettingsUser'
+        type: array
+      total:
+        description: 总数
+        type: integer
+    type: object
+  swagger.swaggerSettingsUserRequest:
+    properties:
+      disabled:
+        description: 是否禁用
+        type: boolean
+      displayName:
+        description: 显示名称
+        type: string
+      email:
+        description: 邮箱
+        type: string
+      password:
+        description: 登录密码，更新时留空表示不修改
+        type: string
+      roleKeys:
+        description: 角色标识集合
+        items:
+          type: string
+        type: array
+      username:
+        description: 用户名
+        type: string
+    type: object
+  swagger.swaggerSystemBaseConfig:
+    properties:
+      appName:
+        description: 控制台品牌名称
+        example: Backup Monitor
+        type: string
+      appSubtitle:
+        description: 控制台品牌副标题
+        example: IT Asset Management
+        type: string
+      backupCron:
+        description: 定时备份 Cron 表达式
+        example: 0 0 * * *
+        type: string
+      backupEnabled:
+        description: 是否启用定时备份
+        type: boolean
+      backupRetentionDays:
+        description: 备份保留天数（0 为永久）
+        example: 30
+        type: integer
+      iconData:
+        description: 图标（站点路径或 Data URL）
+        example: /favicon.svg
+        type: string
+      loginName:
+        description: 登录页品牌名称
+        example: Backup Monitor
+        type: string
+      passwordResetRateLimitMinutes:
+        description: 发送限流统计窗口（分钟）
+        example: 5
+        type: integer
+      passwordResetSendCooldownMinutes:
+        description: 验证码发送冷却（分钟）
+        example: 0.5
+        type: number
+      resetCaptchaTtlMinutes:
+        description: 图形验证码有效期（分钟）
+        example: 1
+        type: integer
+      resetCodeTtlMinutes:
+        description: 找回密码验证码有效期（分钟）
+        example: 10
+        type: integer
+      section:
+        example: brand
+        type: string
+      siteName:
+        description: 网站名称
+        example: Backup Monitor
+        type: string
+      wecomStateTtlMinutes:
+        description: 企业微信扫码有效期（分钟）
+        example: 5
+        type: integer
+    type: object
+  swagger.swaggerTask:
+    properties:
+      hostId:
+        type: string
+      hostIp:
+        type: string
+      hostName:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      schedule:
+        type: string
+      scheduleCron:
+        type: string
+      status:
+        type: string
+      taskKey:
+        type: string
+      tool:
+        type: string
+      type:
+        type: string
+    type: object
+  swagger.swaggerTaskScheduleRequest:
+    properties:
+      scheduleCron:
+        type: string
+    type: object
+  swagger.swaggerWecomAuthorizeEmbed:
+    properties:
+      auth_mode:
+        description: 认证方式：direct=直连企业微信，sso=统一认证中心
+        example: direct
+        type: string
+      callback_path:
+        description: iframe 内扫码确认后的回跳路径：直连模式 /wecom-qr-callback，统一认证中心模式 /login
+        example: /wecom-qr-callback
+        type: string
+      iframe_url:
+        description: 内嵌 iframe 加载的扫码页地址：直连模式为企微登录页（回跳 /wecom-qr-callback），SSO 模式为认证中心入口
+        example: https://login.work.weixin.qq.com/wwlogin/sso/login?login_type=CorpApp&appid=ww123&redirect_uri=https%3A%2F%2Fexample.com%2Fwecom-qr-callback
+        type: string
+      state:
+        description: 直连模式签发的防伪状态串，SSO 模式为空
+        example: eyJwIjoibG9naW4iLCJlIjoxNzI2LCJuIjoiYTFiMmMzIn0.5f8a
+        type: string
+    type: object
+  swagger.swaggerWecomAuthorizeResponse:
+    properties:
+      embed:
+        allOf:
+        - $ref: '#/definitions/swagger.swaggerWecomAuthorizeEmbed'
+        description: 内嵌二维码渲染参数，SSO 与直连模式返回，其余场景缺失表示仅支持整页跳转
+      url:
+        description: 企业微信扫码页跳转地址（整页跳转降级用）
+        example: https://login.work.weixin.qq.com/wwlogin/sso/login?login_type=CorpApp&appid=ww123
+        type: string
+    type: object
+  swagger.swaggerWecomBindResponse:
+    properties:
+      ok:
+        description: 是否成功
+        example: true
+        type: boolean
+      wecomUserid:
+        description: 绑定的企业微信成员 userid
+        example: zhangsan
+        type: string
+    type: object
+  swagger.swaggerWecomCallbackRequest:
+    properties:
+      code:
+        description: 企业微信回调携带的授权码
+        example: abc123
+        type: string
+      state:
+        description: 发起跳转时签发的防伪状态串
+        example: eyJwIjoibG9naW4iLCJlIjoxNzI2LCJuIjoiYTFiMmMzIn0.5f8a
+        type: string
+    type: object
+  swagger.swaggerWecomProvider:
+    properties:
+      config:
+        allOf:
+        - $ref: '#/definitions/swagger.swaggerWecomProviderConfig'
+        description: 配置项
+      enabled:
+        description: 是否启用
+        example: true
+        type: boolean
+      id:
+        description: 提供者标识
+        example: wecom
+        type: string
+      name:
+        description: 显示名称
+        example: 企业微信
+        type: string
+      type:
+        description: 提供者类型
+        example: wecom
+        type: string
+      updatedAt:
+        description: 更新时间
+        example: "2026-09-18 12:00:00"
+        type: string
+    type: object
+  swagger.swaggerWecomProviderConfig:
+    properties:
+      agentid:
+        description: 应用 AgentID
+        example: "1000002"
+        type: string
+      authMode:
+        description: 认证方式：direct=直连企业微信，sso=统一认证中心
+        example: direct
+        type: string
+      corpid:
+        description: 企业 ID（corpid）
+        example: ww1234567890
+        type: string
+      hasSecret:
+        description: 是否已配置应用 Secret
+        example: true
+        type: boolean
+      hasSsoAppSecret:
+        description: 是否已配置应用密钥（SSO 模式）
+        example: true
+        type: boolean
+      redirectPrefix:
+        description: 回调地址前缀（可选，留空时按当前访问地址推断，不含 /login 路径）
+        example: https://example.com
+        type: string
+      ssoAppID:
+        description: 统一认证中心应用标识（SSO 模式）
+        example: wecom-app
+        type: string
+      ssoBaseUrl:
+        description: 统一认证中心地址（SSO 模式）
+        example: https://auth.example.com
+        type: string
+    type: object
+  swagger.swaggerWecomProviderRequest:
+    properties:
+      clearConfig:
+        description: 是否清空已存 Secret
+        example: false
+        type: boolean
+      config:
+        allOf:
+        - $ref: '#/definitions/swagger.swaggerWecomProviderSaveConfig'
+        description: 配置项（secret 仅在更换时传入）
+      enabled:
+        description: 是否启用
+        example: true
+        type: boolean
+      name:
+        description: 显示名称
+        example: 企业微信
+        type: string
+    type: object
+  swagger.swaggerWecomProviderSaveConfig:
+    properties:
+      agentid:
+        description: 应用 AgentID
+        example: "1000002"
+        type: string
+      authMode:
+        description: 认证方式：direct=直连企业微信，sso=统一认证中心
+        example: direct
+        type: string
+      corpid:
+        description: 企业 ID（corpid）
+        example: ww1234567890
+        type: string
+      redirectPrefix:
+        description: 回调地址前缀（可选，留空时按当前访问地址推断，不含 /login 路径）
+        example: https://example.com
+        type: string
+      secret:
+        description: 应用 Secret
+        example: j8Kx2pQ
+        type: string
+      ssoAppID:
+        description: 统一认证中心应用标识（SSO 模式）
+        example: wecom-app
+        type: string
+      ssoAppSecret:
+        description: 应用密钥（SSO 模式，仅在更换时传入）
+        example: 9f2c1a3e4b5d6f708192a3b4c5d6e7f0
+        type: string
+      ssoBaseUrl:
+        description: 统一认证中心地址（SSO 模式）
+        example: https://auth.example.com
+        type: string
+    type: object
+  swagger.swaggerWecomSSORequest:
+    properties:
+      ticket:
+        description: 统一认证中心回跳携带的一次性登录凭证
+        example: 9f2c1a3e4b5d6f708192a3b4c5d6e7f0
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Backup Monitor 通用前后端模板后端 API 文档。除登录、公开品牌与健康检查外，接口默认需要 Bearer Token。
+  title: Backup Monitor API
+  version: 1.0.0
+paths:
+  /api/agent/binary/latest:
+    get:
+      description: 按平台、架构与系统版本选择槽位，返回对应安装包的版本号、大小、SHA-256 与通道
+      parameters:
+      - description: 平台，取值 linux 或 windows
+        in: query
+        name: platform
+        required: true
+        type: string
+      - description: CPU 架构，取值 amd64 或 arm64；省略时按 amd64 处理
+        in: query
+        name: arch
+        type: string
+      - description: Windows 构建号，用于自动选包
+        in: query
+        name: osBuild
+        type: integer
+      - description: Agent 访问令牌，启用校验时必填
+        in: header
+        name: X-Agent-Token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerAgentBinaryLatestResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 查询最新 Agent 版本
+      tags:
+      - Agent 通道
+  /api/agent/config:
+    get:
+      description: 返回全局参数、采集配置与二进制更新信息供 Agent 应用
+      parameters:
+      - description: 主机名
+        in: query
+        name: hostname
+        required: true
+        type: string
+      - description: 平台，取值 linux 或 windows
+        in: query
+        name: platform
+        type: string
+      - description: Agent 访问令牌，启用校验时必填
+        in: header
+        name: X-Agent-Token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 拉取 Agent 配置
+      tags:
+      - Agent 通道
+  /api/agent/download:
+    get:
+      description: 下载匹配主机架构与系统版本的托管 Agent 二进制；精确指定 arch+variant 时取对应槽位，否则按 osBuild
+        自动选包
+      parameters:
+      - description: 平台，取值 linux 或 windows
+        in: query
+        name: platform
+        required: true
+        type: string
+      - description: CPU 架构，取值 amd64 或 arm64；省略时按 osBuild 自动选包
+        in: query
+        name: arch
+        type: string
+      - description: 通道，取值 standard 或 legacy；与 arch 同时指定时精确取槽位
+        in: query
+        name: variant
+        type: string
+      - description: Windows 构建号，用于在未精确指定槽位时自动选包
+        in: query
+        name: osBuild
+        type: integer
+      - description: Agent 访问令牌，启用校验时必填
+        in: header
+        name: X-Agent-Token
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 二进制文件
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 下载托管 Agent 二进制
+      tags:
+      - Agent 通道
+  /api/agent/ws:
+    get:
+      description: 建立 WebSocket 长连接，承载心跳、配置变更与 set_cron/update 命令回执
+      parameters:
+      - description: 主机名
+        in: query
+        name: hostname
+        required: true
+        type: string
+      - description: 稳定机器标识
+        in: query
+        name: nodeId
+        type: string
+      - description: 平台，取值 linux 或 windows
+        in: query
+        name: platform
+        type: string
+      - description: Agent 访问令牌，启用校验时必填
+        in: header
+        name: X-Agent-Token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 协议升级为 WebSocket
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: Agent 心跳长连接
+      tags:
+      - Agent 通道
+  /api/auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: 修改当前登录用户的密码，旧密码错误返回 400，成功后需重新登录
+      parameters:
+      - description: 密码修改请求
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.changePasswordBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 修改当前用户密码
+      tags:
+      - 认证
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录，支持本地密码与 AD/LDAP 两种方式，成功返回令牌与用户信息；同一账号密码连续错误达到阈值后锁定，锁定期间即使密码正确也返回
+        429 与剩余等待分钟（内置 admin 不受限，企业微信扫码不涉及）
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.authLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.authLoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 用户登录
+      tags:
+      - 认证
+  /api/auth/logout:
+    post:
+      description: 退出当前会话，并写入用户注销审计
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+      security:
+      - BearerAuth: []
+      summary: 登出当前会话
+      tags:
+      - 认证
+  /api/auth/me:
+    get:
+      description: 获取当前登录用户的资料、直接角色、有效角色与权限清单
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户
+      tags:
+      - 认证
+  /api/auth/password-reset/captcha:
+    get:
+      description: 获取找回密码图形验证码，无需认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerPasswordResetCaptchaResponse'
+      summary: 获取找回密码图形验证码
+      tags:
+      - 认证
+  /api/auth/password-reset/confirm:
+    post:
+      consumes:
+      - application/json
+      description: 凭邮箱验证码完成找回密码，重置账号密码并写入审计
+      parameters:
+      - description: 找回密码确认
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerPasswordResetConfirmRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerMessageResponse'
+      summary: 确认找回密码
+      tags:
+      - 认证
+  /api/auth/password-reset/send:
+    post:
+      consumes:
+      - application/json
+      description: 向校验通过的邮箱发送找回密码验证码，受发送冷却与限流窗口约束
+      parameters:
+      - description: 找回密码验证码发送
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerPasswordResetSendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerPasswordResetSendResponse'
+      summary: 发送找回密码验证码
+      tags:
+      - 认证
+  /api/auth/password-reset/verify:
+    post:
+      consumes:
+      - application/json
+      description: 校验用户名与图形验证码，换取找回密码流程令牌
+      parameters:
+      - description: 找回密码身份校验
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerPasswordResetVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerPasswordResetVerifyResponse'
+      summary: 校验找回密码身份
+      tags:
+      - 认证
+  /api/auth/providers:
+    get:
+      description: 获取登录页可用的认证方式与找回密码开关，无需认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerPublicAuthProvidersResponse'
+      summary: 获取公开认证方式
+      tags:
+      - 认证
+  /api/auth/wecom/authorize:
+    get:
+      description: 生成企业微信 Web 扫码登录页地址（含防伪 state）与内嵌二维码渲染参数（iframe_url、callback_path）；直连模式内嵌扫码回跳
+        /wecom-qr-callback，统一认证中心模式回跳 /login。登录页默认内嵌渲染二维码，配置异常时自动回退整页跳转；需已启用企业微信认证，无需认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerWecomAuthorizeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 获取企业微信扫码登录地址
+      tags:
+      - 认证
+  /api/auth/wecom/bind:
+    delete:
+      description: 解除当前登录用户的企业微信绑定
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 解绑企业微信账号
+      tags:
+      - 认证
+    post:
+      consumes:
+      - application/json
+      description: 校验绑定 state 后用授权码换取企业微信成员 userid，与当前用户建立绑定；该企微已绑定其他用户时返回 409
+      parameters:
+      - description: 扫码回调载荷
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerWecomCallbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerWecomBindResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 绑定企业微信账号
+      tags:
+      - 认证
+  /api/auth/wecom/bind-url:
+    get:
+      description: 为当前登录用户生成企业微信绑定扫码地址，state 绑定当前用户；需已启用企业微信认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerWecomAuthorizeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取企业微信绑定扫码地址
+      tags:
+      - 认证
+  /api/auth/wecom/callback:
+    post:
+      consumes:
+      - application/json
+      description: 校验 state 后用授权码换取企业微信成员身份，按绑定关系登录并返回令牌与用户信息；未绑定时返回 401
+      parameters:
+      - description: 扫码回调载荷
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerWecomCallbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.authLoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 企业微信扫码登录回调
+      tags:
+      - 认证
+  /api/auth/wecom/sso/bind:
+    post:
+      consumes:
+      - application/json
+      description: 企业微信统一认证（SSO）模式：校验认证中心一次性 ticket 后与当前登录用户建立绑定；该企微已绑定其他用户时返回 409
+      parameters:
+      - description: 认证中心回跳凭证
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerWecomSSORequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerWecomBindResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 统一认证中心扫码绑定
+      tags:
+      - 认证
+  /api/auth/wecom/sso/callback:
+    post:
+      consumes:
+      - application/json
+      description: 企业微信统一认证（SSO）模式：校验认证中心回跳的一次性 ticket 后按绑定关系登录并返回令牌与用户信息；需已启用统一认证模式
+      parameters:
+      - description: 认证中心回跳凭证
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerWecomSSORequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.authLoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 统一认证中心扫码登录回调
+      tags:
+      - 认证
+  /api/backup/agent-binaries:
+    get:
+      description: 返回各槽位（平台 + 架构 + 通道）已托管的版本、Go 版本、大小与 SHA-256（权限 backup.agents.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerAgentBinaryMeta'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取已托管 Agent 二进制
+      tags:
+      - Agent 管理
+  /api/backup/agent-binary:
+    post:
+      consumes:
+      - application/octet-stream
+      description: 上传指定平台与通道的 Agent 二进制并写入审计，支持 amd64 与 arm64（服务端按文件头解析架构、按 buildinfo
+        读取 Go 版本），单次不超过 128MB（权限 backup.agents.manage）
+      parameters:
+      - description: 平台，取值 linux 或 windows
+        in: query
+        name: platform
+        required: true
+        type: string
+      - description: 通道，取值 standard 或 legacy；缺省按 Go 版本推导（Windows amd64 且 Go < 1.21
+          归入 legacy）
+        in: query
+        name: variant
+        type: string
+      - description: 版本号
+        in: query
+        name: version
+        required: true
+        type: string
+      - description: 二进制原始字节（服务端校验 ELF/PE）
+        in: body
+        name: file
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerAgentBinaryMeta'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 上传 Agent 二进制
+      tags:
+      - Agent 管理
+  /api/backup/agent-update/push:
+    put:
+      consumes:
+      - application/json
+      description: 按平台与 IP 条件逐台选择匹配的槽位（架构 + Windows 版本）下发自更新并写入审计（权限 backup.agents.manage）
+      parameters:
+      - description: 平台与目标主机（全部或 IP 条件）
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerAgentBinaryPushRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 推送 Agent 自更新
+      tags:
+      - Agent 管理
+  /api/backup/alerts:
+    get:
+      description: 返回全部告警事件及其状态、级别与关联任务（权限 backup.alerts.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerAlert'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取告警事件列表
+      tags:
+      - 告警中心
+  /api/backup/alerts/{id}:
+    delete:
+      description: 删除指定告警并写入审计（权限 backup.alerts.manage）
+      parameters:
+      - description: 告警 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除告警
+      tags:
+      - 告警中心
+  /api/backup/alerts/{id}/resolve:
+    post:
+      description: 手动恢复指定告警并写入审计（权限 backup.alerts.manage）
+      parameters:
+      - description: 告警 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 恢复告警
+      tags:
+      - 告警中心
+  /api/backup/dashboard:
+    get:
+      description: 返回主机、任务、今日执行与告警的汇总、状态分布与每日趋势（权限 backup.dashboard.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+      security:
+      - BearerAuth: []
+      summary: 获取概览统计
+      tags:
+      - 概览
+  /api/backup/executions:
+    get:
+      description: 返回全部执行记录及其任务、主机与结果（权限 backup.executions.read）
+      parameters:
+      - description: 返回条数上限，0 或省略表示全部
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerExecution'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取执行记录列表
+      tags:
+      - 执行记录
+  /api/backup/executions/{id}:
+    delete:
+      description: 删除指定执行记录并写入审计（权限 backup.executions.manage）
+      parameters:
+      - description: 执行记录 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除执行记录
+      tags:
+      - 执行记录
+    get:
+      description: 返回指定执行记录（权限 backup.executions.read）
+      parameters:
+      - description: 执行记录 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerExecution'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取执行记录详情
+      tags:
+      - 执行记录
+  /api/backup/hosts:
+    get:
+      description: 返回备份主机及其状态、最近上报时间与任务数，可用 ids 只取指定主机（权限 backup.hosts.read）
+      parameters:
+      - description: 主机 ID，多个用逗号分隔；省略时返回全部
+        in: query
+        name: ids
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerHost'
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取备份主机列表
+      tags:
+      - 备份主机
+  /api/backup/hosts/{id}:
+    delete:
+      description: 删除主机并级联清理其任务、执行记录与告警，详见审计详情（权限 backup.hosts.manage）
+      parameters:
+      - description: 主机 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除备份主机
+      tags:
+      - 备份主机
+    get:
+      description: 返回指定主机及其名下任务列表（权限 backup.hosts.read）
+      parameters:
+      - description: 主机 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerHostDetail'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取备份主机详情
+      tags:
+      - 备份主机
+  /api/backup/hosts/{id}/role:
+    put:
+      consumes:
+      - application/json
+      description: 修改主机角色并写入审计（权限 backup.hosts.manage）
+      parameters:
+      - description: 主机 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 主机角色
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerHostRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 修改主机角色
+      tags:
+      - 备份主机
+  /api/backup/hosts/refresh-plan:
+    get:
+      description: 按主机实际匹配到的上报间隔分组，供前端按组局部刷新（权限 backup.hosts.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerHostRefreshPlan'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取主机刷新计划
+      tags:
+      - 备份主机
+  /api/backup/notifications:
+    get:
+      description: 返回通知发送记录及其渠道、状态与错误信息（权限 backup.notifications.read）
+      parameters:
+      - description: 返回条数上限，默认 100，最大 500
+        in: query
+        name: limit
+        type: integer
+      - description: 按通知渠道 ID 过滤，省略时返回全部
+        in: query
+        name: channel
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerNotificationRecord'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取通知发送记录
+      tags:
+      - 通知管理
+  /api/backup/notify/channels:
+    get:
+      description: 返回通知渠道及其方式、订阅事件、级别与启用状态（权限 backup.notifications.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerNotifyChannel'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取通知渠道列表
+      tags:
+      - 通知管理
+    post:
+      consumes:
+      - application/json
+      description: 创建通知渠道并写入审计（权限 backup.notifications.manage）
+      parameters:
+      - description: 通知渠道
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerNotifyChannel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建通知渠道
+      tags:
+      - 通知管理
+  /api/backup/notify/channels/{id}:
+    delete:
+      description: 删除通知渠道并写入审计（权限 backup.notifications.manage）
+      parameters:
+      - description: 通知渠道 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除通知渠道
+      tags:
+      - 通知管理
+    put:
+      consumes:
+      - application/json
+      description: 更新或启停用通知渠道并写入审计；未改动时不写审计（权限 backup.notifications.manage）
+      parameters:
+      - description: 通知渠道 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 通知渠道
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerNotifyChannel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新通知渠道
+      tags:
+      - 通知管理
+  /api/backup/notify/channels/{id}/test:
+    post:
+      description: 按渠道配置发送测试通知，成功与失败均写入审计（权限 backup.notifications.manage）
+      parameters:
+      - description: 通知渠道 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+      security:
+      - BearerAuth: []
+      summary: 测试通知渠道
+      tags:
+      - 通知管理
+  /api/backup/profiles:
+    get:
+      description: 返回全部采集配置及其匹配主机、优先级与采集项（权限 backup.agents.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerAgentProfile'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取采集配置列表
+      tags:
+      - Agent 管理
+    post:
+      consumes:
+      - application/json
+      description: 创建采集配置并写入审计（权限 backup.agents.manage）
+      parameters:
+      - description: 采集配置
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerAgentProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerAgentProfile'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建采集配置
+      tags:
+      - Agent 管理
+  /api/backup/profiles/{id}:
+    delete:
+      description: 删除采集配置并写入审计（权限 backup.agents.manage）
+      parameters:
+      - description: 采集配置 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除采集配置
+      tags:
+      - Agent 管理
+    put:
+      consumes:
+      - application/json
+      description: 更新采集配置并写入审计，未改动时不写审计（权限 backup.agents.manage）
+      parameters:
+      - description: 采集配置 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 采集配置
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerAgentProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerAgentProfile'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新采集配置
+      tags:
+      - Agent 管理
+  /api/backup/settings:
+    get:
+      description: 返回判定阈值、保留策略与 Agent 通道参数（权限 settings.base.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+      security:
+      - BearerAuth: []
+      summary: 获取备份参数
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      description: 按 section 更新判定与保留、Agent 通道或安全与告警参数并写入审计（权限 settings.base.manage）
+      parameters:
+      - description: 备份参数，section 取值 thresholds/agent/alarm
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerGenericObject'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新备份参数
+      tags:
+      - 系统设置
+  /api/backup/tasks:
+    get:
+      description: 返回全部备份任务及其计划、状态与所属主机（权限 backup.tasks.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerTask'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取备份任务列表
+      tags:
+      - 备份任务
+  /api/backup/tasks/{id}:
+    delete:
+      description: 删除任务并级联清理执行记录与告警（权限 backup.tasks.manage）
+      parameters:
+      - description: 任务 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除备份任务
+      tags:
+      - 备份任务
+    get:
+      description: 返回指定备份任务（权限 backup.tasks.read）
+      parameters:
+      - description: 任务 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerTask'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取备份任务详情
+      tags:
+      - 备份任务
+  /api/backup/tasks/{id}/executions:
+    get:
+      description: 返回指定任务的执行记录列表（权限 backup.tasks.read）
+      parameters:
+      - description: 任务 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerExecution'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取任务执行历史
+      tags:
+      - 备份任务
+  /api/backup/tasks/{id}/schedule:
+    put:
+      consumes:
+      - application/json
+      description: 修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回（权限 backup.tasks.manage）
+      parameters:
+      - description: 任务 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 新的 cron 表达式
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerTaskScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 修改执行计划
+      tags:
+      - 备份任务
+  /api/backup/tokens:
+    get:
+      description: 返回 Agent 访问令牌及其启用状态与最近使用时间（权限 backup.agents.read）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerAgentToken'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取 Agent 令牌列表
+      tags:
+      - Agent 管理
+    post:
+      consumes:
+      - application/json
+      description: 创建 Agent 访问令牌，token 留空时自动生成 48 位随机值，自定义值需 16-128 位可见 ASCII 且不得重复；仅在创建响应中返回明文令牌并写入审计（权限
+        backup.agents.manage）
+      parameters:
+      - description: 令牌名称、绑定主机与可选的自定义令牌
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerAgentTokenCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerAgentTokenCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建 Agent 令牌
+      tags:
+      - Agent 管理
+  /api/backup/tokens/{id}:
+    delete:
+      description: 删除 Agent 令牌并写入审计（权限 backup.agents.manage）
+      parameters:
+      - description: 令牌 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除 Agent 令牌
+      tags:
+      - Agent 管理
+    put:
+      consumes:
+      - application/json
+      description: 更新令牌名称、绑定主机或启用状态并写入审计（权限 backup.agents.manage）
+      parameters:
+      - description: 令牌 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 令牌名称、绑定主机与启用状态
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerAgentTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新 Agent 令牌
+      tags:
+      - Agent 管理
+  /api/health:
+    get:
+      description: 探测服务进程是否存活，无需认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerHealthResponse'
+      summary: API 健康检查
+      tags:
+      - 健康检查
+  /api/history:
+    get:
+      description: 获取审计日志；导入类事件的目标仅返回前两个名称，完整清单通过 targetTitle 返回供悬浮提示
+      parameters:
+      - description: 返回条数；默认返回全部
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerAuditHistoryResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取审计日志
+      tags:
+      - 审计日志
+  /api/history/clear:
+    post:
+      consumes:
+      - application/json
+      description: 按前端筛选结果批量清空审计日志；清空成功后自动补记一条「清空审计日志」审计事件（归属「审计日志」模块，目标为清除条数）
+      parameters:
+      - description: 待清空的审计日志编号清单
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerHistoryClearRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerHistoryClearResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 清空审计日志
+      tags:
+      - 审计日志
+  /api/history/export:
+    post:
+      consumes:
+      - application/json
+      description: 各页面导出完成后回写一条审计，模块取值 hosts/tasks/executions/alerts/audit
+      parameters:
+      - description: 导出模块与记录条数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerHistoryExportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 记录数据导出
+      tags:
+      - 审计日志
+  /api/ingest/report:
+    post:
+      consumes:
+      - application/json
+      description: 接收 Agent 上报的主机、任务与执行记录，按 task+session 幂等更新；协议见 docs/agent-protocol.md
+      parameters:
+      - description: Agent 访问令牌，启用校验时必填
+        in: header
+        name: X-Agent-Token
+        type: string
+      - description: 主机、任务与执行记录
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerGenericObject'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: Agent 上报数据
+      tags:
+      - Agent 通道
+  /api/public/base:
+    get:
+      description: 获取登录页与启动屏使用的品牌标识，无需认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerPublicBrandingResponse'
+      summary: 获取公开品牌标识
+      tags:
+      - 认证
+  /api/settings/auth-provider:
+    get:
+      description: 获取 AD/LDAP 认证配置（敏感字段脱敏）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsAuthProviderResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取认证配置
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: AD/LDAP 认证配置
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsAuthProviderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsAuthProviderResponse'
+      security:
+      - BearerAuth: []
+      summary: 保存 AD/LDAP 认证配置
+      tags:
+      - 系统设置
+  /api/settings/auth-provider/test:
+    post:
+      consumes:
+      - application/json
+      description: 按请求体或当前配置发起 LDAP 连通性测试（权限 settings.auth.manage）
+      parameters:
+      - description: 待测试的 LDAP 连接参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerGenericObject'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 测试 LDAP 连通性
+      tags:
+      - 系统设置
+  /api/settings/auth/wecom:
+    get:
+      description: 获取企业微信认证配置（Secret 不回显，仅返回是否已配置）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerWecomProvider'
+      security:
+      - BearerAuth: []
+      summary: 获取企业微信认证配置
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      description: 保存企业微信认证配置；认证方式 direct（直连）启用时要求企业 ID、AgentID 与 Secret 完整，sso（统一认证中心）启用时要求认证中心地址、应用标识与应用密钥完整，密钥加密存储不回显
+      parameters:
+      - description: 企业微信认证配置
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerWecomProviderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerWecomProvider'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 保存企业微信认证配置
+      tags:
+      - 系统设置
+  /api/settings/base:
+    get:
+      description: 获取系统基础配置
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSystemBaseConfig'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取系统基础配置
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      description: 更新系统基础配置；携带 section（brand/security/backup）时按区块局部更新，审计目标细分为品牌标识、安全时效、数据备份
+      parameters:
+      - description: 系统基础配置
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSystemBaseConfig'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSystemBaseConfig'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新系统基础配置
+      tags:
+      - 系统设置
+  /api/settings/email:
+    get:
+      description: 获取邮件配置（敏感字段脱敏）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsEmailResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取邮件配置
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 邮件配置
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsEmailResponse'
+      security:
+      - BearerAuth: []
+      summary: 保存邮件配置
+      tags:
+      - 系统设置
+  /api/settings/email/test:
+    post:
+      consumes:
+      - application/json
+      description: 按当前邮件配置向指定收件人发送测试邮件并写入审计（权限 settings.notifications.manage）
+      parameters:
+      - description: 测试收件人，字段 to
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerGenericObject'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 发送测试邮件
+      tags:
+      - 系统设置
+  /api/settings/permissions:
+    get:
+      description: 返回权限目录全量清单（Key、名称、描述、分类与隐含关系）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/swagger.swaggerGenericObject'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取权限目录
+      tags:
+      - 系统设置
+  /api/settings/roles:
+    get:
+      description: 获取角色列表及权限集合
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsRoleListResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取设置角色列表
+      tags:
+      - 系统设置
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsRole'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建角色
+      tags:
+      - 系统设置
+  /api/settings/roles/{id}:
+    delete:
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除角色
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 角色信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsRole'
+      security:
+      - BearerAuth: []
+      summary: 更新角色
+      tags:
+      - 系统设置
+  /api/settings/roles/{id}/disabled:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 启用或禁用
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsDisabledRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsRole'
+      security:
+      - BearerAuth: []
+      summary: 启用或禁用角色
+      tags:
+      - 系统设置
+  /api/settings/user-groups:
+    get:
+      description: 获取用户群组列表及成员与角色
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsGroupListResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取设置用户组列表
+      tags:
+      - 系统设置
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 群组信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsGroup'
+      security:
+      - BearerAuth: []
+      summary: 创建用户群组
+      tags:
+      - 系统设置
+  /api/settings/user-groups/{id}:
+    delete:
+      parameters:
+      - description: 群组 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除用户群组
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 群组 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 群组信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsGroup'
+      security:
+      - BearerAuth: []
+      summary: 更新用户群组
+      tags:
+      - 系统设置
+  /api/settings/users:
+    get:
+      description: 获取用户列表及有效角色与权限
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsUserListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取设置用户列表
+      tags:
+      - 系统设置
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建用户
+      tags:
+      - 系统设置
+  /api/settings/users/{id}:
+    delete:
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerOKResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除用户
+      tags:
+      - 系统设置
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 用户信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新用户
+      tags:
+      - 系统设置
+  /api/settings/users/{id}/disabled:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 启用或禁用
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerSettingsDisabledRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerSettingsUser'
+      security:
+      - BearerAuth: []
+      summary: 启用或禁用用户
+      tags:
+      - 系统设置
+  /download/backup-agent:
+    get:
+      description: 无需令牌的公开下载入口，按平台、架构与系统版本选择槽位，供首次部署直接拉取托管二进制
+      parameters:
+      - description: 平台，取值 linux 或 windows
+        in: query
+        name: platform
+        required: true
+        type: string
+      - description: CPU 架构，取值 amd64 或 arm64
+        in: query
+        name: arch
+        type: string
+      - description: 通道，取值 standard 或 legacy
+        in: query
+        name: variant
+        type: string
+      - description: Windows 构建号，用于自动选包
+        in: query
+        name: osBuild
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 二进制文件，响应头含版本与 SHA-256
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      summary: 公开下载 Agent 二进制
+      tags:
+      - Agent 通道
+  /health:
+    get:
+      description: 探测服务进程是否存活，无需认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerHealthResponse'
+      summary: 健康检查
+      tags:
+      - 健康检查
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Backup Monitor 应用图标">
+  <title>Backup Monitor</title>
+  <defs>
+    <linearGradient id="bmTile" x1="85.3333" y1="53.3333" x2="437.3333" y2="469.3333" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3b82f6" />
+      <stop offset="0.52" stop-color="#06b6d4" />
+      <stop offset="1" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bmTile)" />
+  <path
+    d="M256 92 L396 146 V266 C396 346 336 404 256 428 C176 404 116 346 116 266 V146 Z"
+    fill="#ffffff"
+    fill-opacity="0.14"
+    stroke="#ffffff"
+    stroke-width="22"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M168 264 H214 L240 210 L288 310 L312 264 H348"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="26"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

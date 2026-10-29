@@ -1,0 +1,238 @@
+name: CI/CD
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 登录阿里云镜像仓库
+        uses: docker/login-action@v4
+        with:
+          registry: registry.cn-shenzhen.aliyuncs.com
+          username: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
+          password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
+
+      - name: 登录 Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 设置 QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: 生成标签
+        id: tags
+        run: |
+          ALIYUN_IMAGE="registry.cn-shenzhen.aliyuncs.com/zyx3721/backup-monitor"
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/backup-monitor"
+          VERSION=${GITHUB_REF#refs/tags/v}
+          if [[ "$VERSION" =~ (alpha|beta|rc|pre) ]]; then
+            echo "tags=${ALIYUN_IMAGE}:${VERSION},${IMAGE}:${VERSION}" >> $GITHUB_OUTPUT
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "📦 检测到预发布版本: v${VERSION} (不打 latest 标签)"
+          else
+            echo "tags=${ALIYUN_IMAGE}:${VERSION},${ALIYUN_IMAGE}:latest,${IMAGE}:${VERSION},${IMAGE}:latest" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "🚀 正式版本: v${VERSION} (打 latest 标签)"
+          fi
+
+      - name: 设置 Go 环境
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: |
+            backend/go.sum
+
+      - name: 设置 Node 环境
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 交叉编译 Backend 多平台二进制文件
+        id: backend_build
+        working-directory: backend
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          BUILD_VERSION=${GITHUB_REF_NAME}
+          BUILD_COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(TZ=Asia/Shanghai date +"%Y-%m-%dT%H:%M:%S%:z")
+          LDFLAGS="-s -w -X backup-monitor-backend/internal/buildinfo.Version=${BUILD_VERSION} -X backup-monitor-backend/internal/buildinfo.Commit=${BUILD_COMMIT} -X backup-monitor-backend/internal/buildinfo.BuildDate=${BUILD_DATE}"
+          mkdir -p dist
+
+          prepare_package() {
+            local pkg_dir=$1
+            mkdir -p ${pkg_dir}
+            cp .env.example ${pkg_dir}/.env.example
+            echo "请将 .env.example 复制为 .env 并配置相关参数" > ${pkg_dir}/README.txt
+          }
+
+          echo "🔨 编译 Linux AMD64..."
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o backup-monitor ./cmd/server
+          prepare_package "dist/linux_amd64"
+          mv backup-monitor dist/linux_amd64/
+          tar -czf dist/backup-monitor_${VERSION}_linux_amd64.tar.gz -C dist linux_amd64
+          rm -rf dist/linux_amd64
+
+          echo "🔨 编译 Linux ARM64..."
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o backup-monitor ./cmd/server
+          prepare_package "dist/linux_arm64"
+          mv backup-monitor dist/linux_arm64/
+          tar -czf dist/backup-monitor_${VERSION}_linux_arm64.tar.gz -C dist linux_arm64
+          rm -rf dist/linux_arm64
+
+          echo "🔨 编译 macOS AMD64..."
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o backup-monitor ./cmd/server
+          prepare_package "dist/darwin_amd64"
+          mv backup-monitor dist/darwin_amd64/
+          tar -czf dist/backup-monitor_${VERSION}_darwin_amd64.tar.gz -C dist darwin_amd64
+          rm -rf dist/darwin_amd64
+
+          echo "🔨 编译 macOS ARM64..."
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o backup-monitor ./cmd/server
+          prepare_package "dist/darwin_arm64"
+          mv backup-monitor dist/darwin_arm64/
+          tar -czf dist/backup-monitor_${VERSION}_darwin_arm64.tar.gz -C dist darwin_arm64
+          rm -rf dist/darwin_arm64
+
+          echo "🔨 编译 Windows AMD64..."
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o backup-monitor.exe ./cmd/server
+          prepare_package "dist/windows_amd64"
+          mv backup-monitor.exe dist/windows_amd64/
+          cd dist && zip -r backup-monitor_${VERSION}_windows_amd64.zip windows_amd64 && cd ..
+          rm -rf dist/windows_amd64
+
+          echo "🔨 编译 Windows ARM64..."
+          GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o backup-monitor.exe ./cmd/server
+          prepare_package "dist/windows_arm64"
+          mv backup-monitor.exe dist/windows_arm64/
+          cd dist && zip -r backup-monitor_${VERSION}_windows_arm64.zip windows_arm64 && cd ..
+          rm -rf dist/windows_arm64
+
+          echo "✅ 编译完成"
+          echo "commit=${BUILD_COMMIT}" >> "$GITHUB_OUTPUT"
+          echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
+
+      - name: 构建 Frontend Nitro SSR 产物包
+        working-directory: frontend
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          mkdir -p dist-release
+
+          echo "📦 安装 Frontend 依赖..."
+          npm ci
+
+          echo "🔨 构建 Frontend Nitro SSR 产物..."
+          npm run build
+
+          echo "📦 打包 Frontend Nitro SSR 产物..."
+          tar -czf dist-release/backup-monitor-frontend_${VERSION}.tar.gz -C .output .
+
+          echo "✅ Frontend 构建完成"
+
+      - name: 生成发布产物校验和
+        run: |
+          mkdir -p release-assets
+          sha256sum backend/dist/*.tar.gz backend/dist/*.zip frontend/dist-release/*.tar.gz \
+            | sed -E 's#(backend/dist|frontend/dist-release)/##' \
+            > release-assets/SHA256SUMS
+
+      - name: 构建并推送 Docker 镜像
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./deploy/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
+          provenance: false
+          build-args: |
+            APP_VERSION=${{ github.ref_name }}
+            APP_COMMIT=${{ steps.backend_build.outputs.commit }}
+            APP_BUILD_DATE=${{ steps.backend_build.outputs.build_date }}
+            NPM_REGISTRY=https://registry.npmjs.org
+            GOPROXY=https://proxy.golang.org,direct
+
+      - name: 生成 Changelog
+        id: changelog
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges -10)
+          fi
+
+          if [[ "$VERSION" =~ (alpha|beta|rc|pre) ]]; then
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+
+          cat > release_notes.md << EOF
+          ## 🎉 Backup Monitor v${VERSION} 发布
+
+          ### 📋 构建信息
+          - **版本**: v${VERSION}
+          - **Commit**: ${GITHUB_SHA:0:7}
+          - **构建时间**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          ### 📝 更新内容
+          ${COMMITS}
+
+          ### 🐳 Docker 镜像
+          \`\`\`bash
+          # 阿里云镜像仓库（国内推荐）
+          docker pull registry.cn-shenzhen.aliyuncs.com/zyx3721/backup-monitor:${VERSION}
+          # Docker Hub
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/backup-monitor:${VERSION}
+          \`\`\`
+
+          ### 📦 二进制下载
+          - Linux AMD64: \`backup-monitor_${VERSION}_linux_amd64.tar.gz\`
+          - Linux ARM64: \`backup-monitor_${VERSION}_linux_arm64.tar.gz\`
+          - macOS AMD64: \`backup-monitor_${VERSION}_darwin_amd64.tar.gz\`
+          - macOS ARM64: \`backup-monitor_${VERSION}_darwin_arm64.tar.gz\`
+          - Windows AMD64: \`backup-monitor_${VERSION}_windows_amd64.zip\`
+          - Windows ARM64: \`backup-monitor_${VERSION}_windows_arm64.zip\`
+          - Frontend Nitro SSR 产物包: \`backup-monitor-frontend_${VERSION}.tar.gz\`
+
+          ### 🔐 校验和
+          下载 \`SHA256SUMS\` 和对应产物后，执行 \`sha256sum -c SHA256SUMS\` 验证文件完整性。
+          EOF
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ steps.changelog.outputs.is_prerelease == 'true' }}
+          generate_release_notes: false
+          files: |
+            backend/dist/*.tar.gz
+            backend/dist/*.zip
+            frontend/dist-release/*.tar.gz
+            release-assets/SHA256SUMS
