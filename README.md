@@ -607,6 +607,7 @@ cd agent && go build ./... && go vet ./... && go test ./...
 
 | 版本 | 发布日期 | 更新日志 |
 | --- | --- | --- |
+| v1.0.0 | 2026-10-26 | [v1.0.0](verchanglog/v1.0.0.md) |
 
 ### Agent
 
