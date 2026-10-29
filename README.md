@@ -613,6 +613,7 @@ cd agent && go build ./... && go vet ./... && go test ./...
 
 | 版本 | 发布日期 | 更新日志 |
 | --- | --- | --- |
+| agent-v1.0.0 | 2026-10-26 | [agent-v1.0.0](verchanglog/agent-v1.0.0.md) |
 
 两类产物与发布说明都在 [GitHub Releases](https://github.com/zyx3721/backup-monitor/releases)，通过标签前缀区分。
 
