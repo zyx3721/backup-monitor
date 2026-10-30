@@ -137,7 +137,7 @@ backup-monitor/
 │       └── styles.css             全局设计系统（bm-* 前缀、明暗主题）
 ├── deploy/                        Dockerfile、docker-compose、entrypoint、nginx、supervisord
 ├── docs/                          本手册与 Agent 协议、数据库设计等文档
-├── scripts/                       前后端运行脚本与升级脚本
+├── scripts/                       前后端运行脚本、升级脚本与 Veeam 备份触发脚本
 └── .github/workflows/             CI/CD 工作流（推送 v* Tag 自动构建打包发布）
 ```
 

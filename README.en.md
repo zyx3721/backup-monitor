@@ -568,7 +568,7 @@ backup-monitor/
 │       ├── server.ts            server entry
 │       ├── start.ts             client entry
 │       └── styles.css           global styles and theme variables
-├── scripts/                     local start and online update scripts
+├── scripts/                     local start, online update and Veeam backup trigger scripts
 ├── .github/workflows/           GitHub Actions build workflow
 ├── .gitignore                   Git ignore rules
 ├── LICENSE

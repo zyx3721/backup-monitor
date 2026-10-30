@@ -568,7 +568,7 @@ backup-monitor/
 │       ├── server.ts            服务端入口
 │       ├── start.ts             客户端入口
 │       └── styles.css           全局样式与主题变量
-├── scripts/                     本地启动与在线更新脚本
+├── scripts/                     本地启动、在线更新与 Veeam 备份触发脚本
 ├── .github/workflows/           GitHub Actions 构建打包工作流
 ├── .gitignore                   Git 忽略规则
 ├── LICENSE
