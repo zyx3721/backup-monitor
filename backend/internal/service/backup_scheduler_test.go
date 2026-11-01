@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"backup-monitor-backend/internal/domain"
+	"backup-monitor-backend/internal/service"
 )
 
 func TestOfflineHostKeepsNotRunAlert(t *testing.T) {
@@ -56,6 +57,53 @@ func TestOfflineHostKeepsNotRunAlert(t *testing.T) {
 	if counts["backup_failed"] != 0 {
 		t.Fatalf("active backup_failed = %d, want 0 (counts=%v)", counts["backup_failed"], counts)
 	}
+}
+
+func TestDedupeOffRaisesAlertEveryRun(t *testing.T) {
+	svc := newTestService(t)
+	report := sampleReport()
+	report.Executions = nil
+	if _, err := svc.Ingest(t.Context(), report); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	hosts, err := svc.Repo().ListHosts()
+	if err != nil || len(hosts) != 1 {
+		t.Fatalf("hosts = %d, err = %v", len(hosts), err)
+	}
+	now := time.Now().UTC()
+	if _, err := svc.Repo().DB().Exec(`UPDATE hosts SET last_report_time=? WHERE id=?`,
+		now.Add(-2*time.Hour).Format(time.RFC3339), hosts[0].ID); err != nil {
+		t.Fatalf("expire host report: %v", err)
+	}
+	settings := domain.DefaultAppSettings()
+	settings.DedupeAlerts = false
+	if err := svc.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+
+	svc.RunScheduler(now)
+	svc.RunScheduler(now.Add(30 * time.Second))
+	if got := countAlertsByType(t, svc, "report_timeout"); got != 2 {
+		t.Fatalf("dedupe off alerts = %d, want 2", got)
+	}
+
+	settings.DedupeAlerts = true
+	if err := svc.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	svc.RunScheduler(now.Add(60 * time.Second))
+	if got := countAlertsByType(t, svc, "report_timeout"); got != 2 {
+		t.Fatalf("dedupe on alerts = %d, want 2", got)
+	}
+}
+
+func countAlertsByType(t *testing.T, svc *service.BackupService, alertType string) int {
+	t.Helper()
+	var count int
+	if err := svc.Repo().DB().QueryRow(`SELECT COUNT(*) FROM alerts WHERE type=?`, alertType).Scan(&count); err != nil {
+		t.Fatalf("count alerts: %v", err)
+	}
+	return count
 }
 
 func TestCleanupNotifyRetentionIndependent(t *testing.T) {

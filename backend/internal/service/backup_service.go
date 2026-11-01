@@ -237,8 +237,6 @@ func parseTime(value string) (time.Time, error) {
 	return appcommon.ParseTimestamp(value)
 }
 
-const dedupeOffSuppress = time.Hour
-
 // alertPlanLayout 未执行告警里记录的计划时刻格式，用于按计划周期恢复告警。
 const alertPlanLayout = "2006-01-02 15:04"
 
@@ -254,7 +252,7 @@ type alertParams struct {
 	Message  string
 }
 
-// RaiseAlert 创建或更新告警，并在新告警产生时异步发送通知。
+// RaiseAlert 创建或更新告警，并在新告警产生时异步发送通知；关闭去重后按调用次数逐条创建。
 func (s *BackupService) RaiseAlert(params alertParams) {
 	settings := s.Settings()
 	if settings.DedupeAlerts {
@@ -266,12 +264,6 @@ func (s *BackupService) RaiseAlert(params alertParams) {
 			if level != params.Level || message != params.Message {
 				_, _ = s.repo.DB().Exec(`UPDATE alerts SET level=?, message=? WHERE id=?`, params.Level, params.Message, id)
 			}
-			return
-		}
-	} else {
-		since := appcommon.FormatTimestamp(time.Now().Add(-dedupeOffSuppress))
-		recent, err := s.repo.AlertExistsRecent(params.Type, params.TaskID, params.HostID, since)
-		if err == nil && recent {
 			return
 		}
 	}
