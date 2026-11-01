@@ -1009,6 +1009,8 @@ definitions:
         type: string
       serverOnly:
         type: boolean
+      unlock:
+        type: boolean
     type: object
   swagger.swaggerWecomAuthorizeEmbed:
     properties:
@@ -2489,15 +2491,16 @@ paths:
     put:
       consumes:
       - application/json
-      description: 修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回；serverOnly 为 true 时只写服务端判定计划（权限
-        backup.tasks.manage）
+      description: 修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回；serverOnly 为 true 时只写服务端判定计划；unlock
+        为 true 时解除锁定并恢复 Agent 覆盖（权限 backup.tasks.manage）
       parameters:
       - description: 任务 ID
         in: path
         name: id
         required: true
         type: string
-      - description: 新的 cron 表达式；serverOnly 为 true 时只写服务端判定计划、不下发 Agent
+      - description: 新的 cron 表达式；serverOnly 为 true 时只写服务端判定计划、不下发 Agent；unlock 为 true
+          时解除计划锁定
         in: body
         name: request
         required: true

@@ -217,6 +217,7 @@ export function TasksPage() {
                   <td className="px-4 py-3 text-sm text-[var(--bm-text)]">
                     <span className="inline-flex items-center gap-1.5">
                       {taskSchedule(task)}
+                      {task.scheduleLocked ? <Tag tone="info">服务端判定</Tag> : null}
                       {!task.scheduleParsed && !task.scheduleDisabled ? (
                         <Tag tone="warning">计划未识别</Tag>
                       ) : null}

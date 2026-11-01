@@ -205,6 +205,12 @@ func (r *BackupRepository) UpdateTaskSchedule(id, cron string, locked bool) erro
 	return err
 }
 
+// UnlockTaskSchedule 解除计划锁定，恢复由 Agent 上报覆盖。
+func (r *BackupRepository) UnlockTaskSchedule(id string) error {
+	_, err := r.db.Exec(`UPDATE tasks SET schedule_locked=0 WHERE id=?`, id)
+	return err
+}
+
 // taskScanner 抽象 *sql.Row 与 *sql.Rows 的扫描接口。
 type taskScanner interface {
 	Scan(dest ...any) error

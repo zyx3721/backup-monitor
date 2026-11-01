@@ -1130,7 +1130,7 @@ server {
 - `GET /api/backup/tasks` - 获取任务列表：返回全部任务及其实计划、状态与所属主机（权限 `.read`）
 - `GET /api/backup/tasks/{id}` - 获取任务详情：返回指定任务（权限 `.read`）
 - `GET /api/backup/tasks/{id}/executions` - 获取任务执行历史：返回该任务的执行记录列表（权限 `.read`）
-- `PUT /api/backup/tasks/{id}/schedule` - 修改执行计划：更新 cron 并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回；`serverOnly: true` 时只写服务端判定计划、不下发 Agent（权限 `.manage`）
+- `PUT /api/backup/tasks/{id}/schedule` - 修改执行计划：更新 cron 并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回；`serverOnly: true` 时只写服务端判定计划、不下发 Agent；`unlock: true` 时解除计划锁定、恢复 Agent 覆盖（权限 `.manage`）
 - `DELETE /api/backup/tasks/{id}` - 删除任务：级联删除执行记录与告警，审计详情记录级联条数（权限 `.manage`）
 
 **执行记录**（权限 `backup.executions`）
@@ -1286,7 +1286,7 @@ sqlite3 backend/data/backup_monitor.db "UPDATE users SET pass = '<生成的哈�
 - **主机离线期间**：任务判定暂停，已有的未执行告警不会被清除；主机恢复在线后按最新计划继续判定
 - **手动执行不计入计划**：人工触发的执行记录只更新任务状态与最近执行时间，不会让计划看起来已按时完成
 - **长周期计划**：月度、季度、年度计划均可回溯判定，闰年 2 月 29 日同样覆盖
-- **计划无法识别**：采集到的计划文本无法解析为 cron 时（如 Windows「开机时」），任务列表会显示「计划未识别」，该任务不参与未执行判定；可在任务详情点铅笔补录 5 段 cron，勾选「仅服务端判定」后计划只用于判定、不下发 Agent
+- **计划无法识别**：采集到的计划文本无法解析为 cron 时（如 Windows「开机时」），任务列表会显示「计划未识别」，该任务不参与未执行判定；可在任务详情点铅笔补录 5 段 cron，勾选「仅服务端判定」后计划只用于判定、不下发 Agent，详情页会显示「仅服务端判定」标记，点「解除锁定」可恢复由 Agent 覆盖
 - **任务是否被采集到**：`crontab` 需要带约定标签、Windows 计划任务需存在且可读、Veeam Job 需能从 `veeamconfig` 解析；「备份任务 → 采集配置」可查看实际下发的规则
 - **采集配置是否命中**：`hostname` 通配不匹配时该主机不会采集任务，只上报心跳
 - **手工登记任务**：没有采集源的任务需由 Agent 或接口自行上报执行记录，服务端不会凭空生成

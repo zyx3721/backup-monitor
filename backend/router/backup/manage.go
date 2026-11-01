@@ -214,20 +214,32 @@ func (a *Router) handleTaskSchedule(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ScheduleCron string `json:"scheduleCron"`
 		ServerOnly   bool   `json:"serverOnly"`
+		Unlock       bool   `json:"unlock"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		common.WriteError(w, http.StatusBadRequest, "请求体格式无效")
-		return
-	}
-	cron := strings.TrimSpace(body.ScheduleCron)
-	if !service.IsValidCron(cron) {
-		common.WriteError(w, http.StatusBadRequest, "cron 表达式无效，应为 5 段式（分 时 日 月 周），如 0 23 * * 0")
 		return
 	}
 	id := chi.URLParam(r, "id")
 	task, err := a.svc.Repo().GetTask(id)
 	if err != nil || task == nil {
 		common.WriteError(w, http.StatusNotFound, "任务不存在")
+		return
+	}
+	if body.Unlock {
+		if err := a.svc.Repo().UnlockTaskSchedule(id); err != nil {
+			common.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		a.svc.RecomputeTaskStatus(id, time.Now())
+		a.recordAudit(r, service.AuditModuleTasks, "解除执行计划锁定", task.Name,
+			fmt.Sprintf("主机 %s 的任务 %s 执行计划已解除锁定，恢复由 Agent 上报覆盖", task.HostName, task.Name), service.AuditResultSuccess)
+		common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "unlocked": true})
+		return
+	}
+	cron := strings.TrimSpace(body.ScheduleCron)
+	if !service.IsValidCron(cron) {
+		common.WriteError(w, http.StatusBadRequest, "cron 表达式无效，应为 5 段式（分 时 日 月 周），如 0 23 * * 0")
 		return
 	}
 	delivered, ok, message := false, true, "已保存为服务端判定计划，未下发 Agent"

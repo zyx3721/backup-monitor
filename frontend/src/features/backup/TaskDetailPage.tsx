@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { userHasPermission } from '@/lib/permissions';
 import { getStoredUser } from '@/lib/session';
 import { showErrorToast } from '@/lib/toast-errors';
-import { deleteTask, fetchTask, fetchTaskExecutions, updateTaskSchedule } from './api';
+import { deleteTask, fetchTask, fetchTaskExecutions, unlockTaskSchedule, updateTaskSchedule } from './api';
 import { ExecutionDetailDialog } from './ExecutionDetailDialog';
 import { executionDuration, sizeLabel } from './execution-utils';
 import {
@@ -129,6 +129,15 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
     onError: error => showErrorToast(error, '修改执行计划失败'),
   });
 
+  const unlockSchedule = useMutation({
+    mutationFn: () => unlockTaskSchedule(taskID),
+    onSuccess: () => {
+      toast.success('已解除锁定，执行计划恢复以 Agent 上报为准');
+      void queryClient.invalidateQueries({ queryKey: ['backup'] });
+    },
+    onError: error => showErrorToast(error, '解除执行计划锁定失败'),
+  });
+
   const remove = useMutation({
     mutationFn: () => deleteTask(taskID),
     onSuccess: () => {
@@ -199,6 +208,7 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
                       <code className="rounded bg-[var(--bm-control-bg-soft)] px-2 py-0.5 font-mono text-xs text-[var(--bm-text)]">
                         {task.scheduleCron || '-'}
                       </code>
+                      {task.scheduleLocked ? <Tag tone="info">仅服务端判定</Tag> : null}
                       {canManage && task.taskKey ? (
                         <button
                           type="button"
@@ -222,6 +232,7 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
                   value={
                     <span className="flex flex-wrap items-center gap-2">
                       {taskSchedule(task)}
+                      {task.scheduleLocked ? <Tag tone="info">仅服务端判定</Tag> : null}
                       {canManage ? (
                         <button
                           type="button"
@@ -246,6 +257,26 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
                   value={
                     <span className="text-amber-500">
                       计划文本无法解析为 cron，未执行判定不会生效；可点击铅笔补录
+                    </span>
+                  }
+                />
+              ) : null}
+              {task.scheduleLocked ? (
+                <Info
+                  label="计划来源"
+                  value={
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-[var(--bm-text)]">服务端补录（Agent 上报不覆盖）</span>
+                      {canManage ? (
+                        <button
+                          type="button"
+                          className="text-xs text-[var(--bm-accent-text)] underline underline-offset-2 disabled:opacity-60"
+                          disabled={unlockSchedule.isPending}
+                          onClick={() => unlockSchedule.mutate()}
+                        >
+                          {unlockSchedule.isPending ? '解除中' : '解除锁定'}
+                        </button>
+                      ) : null}
                     </span>
                   }
                 />
@@ -411,6 +442,11 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
             <div className="grid gap-2 border-t border-[var(--bm-border)] pt-4 sm:grid-cols-[64px_minmax(0,1fr)] sm:gap-3">
               <div className="text-sm text-[var(--bm-text-muted)] sm:text-right">下发</div>
               <div className="space-y-2">
+                {task?.scheduleLocked ? (
+                  <p className="text-xs leading-5 text-[var(--bm-text-muted)]">
+                    当前计划已锁定为「仅服务端判定」；取消勾选后保存即可解除锁定并重新下发 Agent
+                  </p>
+                ) : null}
                 <label className="flex items-start gap-2 text-sm text-[var(--bm-text)]">
                   <input
                     type="checkbox"

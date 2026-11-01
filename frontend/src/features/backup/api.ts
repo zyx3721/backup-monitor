@@ -49,6 +49,12 @@ export const updateTaskSchedule = (id: string, scheduleCron: string, serverOnly 
     body: JSON.stringify({ scheduleCron, serverOnly }),
   });
 
+export const unlockTaskSchedule = (id: string) =>
+  api<{ ok: boolean; unlocked: boolean }>(`/api/backup/tasks/${id}/schedule`, {
+    method: 'PUT',
+    body: JSON.stringify({ unlock: true }),
+  });
+
 export const fetchExecutions = () => api<BackupExecution[]>('/api/backup/executions');
 export const deleteExecution = (id: string) =>
   api<{ ok: boolean }>(`/api/backup/executions/${id}`, { method: 'DELETE' });

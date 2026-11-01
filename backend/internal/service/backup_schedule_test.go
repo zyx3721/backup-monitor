@@ -39,6 +39,49 @@ func TestDecorateTasksScheduleState(t *testing.T) {
 	}
 }
 
+func TestUnlockTaskScheduleRestoresAgentSchedule(t *testing.T) {
+	svc := newTestService(t)
+	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
+	report := windowReport(plan, nil)
+	report.Tasks[0].Schedule = "开机时"
+	report.Tasks[0].ScheduleCron = ""
+	if _, err := svc.Ingest(t.Context(), report); err != nil {
+		t.Fatalf("first ingest: %v", err)
+	}
+	tasks, err := svc.Repo().ListTasks()
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("tasks = %d, err = %v", len(tasks), err)
+	}
+	taskID := tasks[0].ID
+	if err := svc.Repo().UpdateTaskSchedule(taskID, "0 23 * * *", true); err != nil {
+		t.Fatalf("lock schedule: %v", err)
+	}
+	if err := svc.Repo().UnlockTaskSchedule(taskID); err != nil {
+		t.Fatalf("unlock schedule: %v", err)
+	}
+	task, err := svc.Repo().GetTask(taskID)
+	if err != nil || task == nil {
+		t.Fatalf("get task: %v", err)
+	}
+	if task.ScheduleLocked {
+		t.Fatalf("task still locked")
+	}
+
+	again := windowReport(plan, nil)
+	again.Tasks[0].Schedule = "每天 01:00"
+	again.Tasks[0].ScheduleCron = "0 1 * * *"
+	if _, err := svc.Ingest(t.Context(), again); err != nil {
+		t.Fatalf("second ingest: %v", err)
+	}
+	task, err = svc.Repo().GetTask(taskID)
+	if err != nil || task == nil {
+		t.Fatalf("get task after ingest: %v", err)
+	}
+	if task.ScheduleCron != "0 1 * * *" || task.ScheduleLocked {
+		t.Fatalf("schedule = %q locked=%v, want agent schedule", task.ScheduleCron, task.ScheduleLocked)
+	}
+}
+
 func TestManualServerScheduleSurvivesIngest(t *testing.T) {
 	svc := newTestService(t)
 	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
