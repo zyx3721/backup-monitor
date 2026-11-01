@@ -216,10 +216,10 @@ func swaggerBackupSettings() {}
 // @Tags 系统设置
 // @Accept json
 // @Produce json
-// @Param request body swaggerGenericObject true "备份参数，section 取值 thresholds/agent/alarm"
+// @Param request body swaggerGenericObject true "备份参数；section 取值 thresholds/agent/alarm，未提交字段保持现值"
 // @Success 200 {object} swaggerGenericObject
 // @Failure 400 {object} swaggerErrorResponse
-// @Description 按 section 更新判定与保留、Agent 通道或安全与告警参数并写入审计（权限 settings.base.manage）
+// @Description 按 section 或字段合并更新判定与保留、Agent 通道或安全与告警参数并写入审计，未提交字段保持原值（权限 settings.base.manage）
 // @Security BearerAuth
 // @Router /api/backup/settings [put]
 func swaggerBackupSettingsPut() {}

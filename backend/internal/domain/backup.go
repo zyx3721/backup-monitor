@@ -206,6 +206,76 @@ func (s AppSettings) Sections() map[string]map[string]any {
 	}
 }
 
+// AppSettingsMap 展开基础参数为可合并的原始输入，agent 保持嵌套结构。
+func AppSettingsMap(settings AppSettings) map[string]any {
+	merged := map[string]any{}
+	for name, section := range settings.Sections() {
+		if name == BaseSectionAgent {
+			merged["agent"] = section
+			continue
+		}
+		for key, value := range section {
+			merged[key] = value
+		}
+	}
+	return merged
+}
+
+var settingsSectionKeys = map[string][]string{
+	BaseSectionThresholds: {
+		"reportTimeoutMinutes", "offlineTimeoutMinutes", "notRunGraceMinutes", "scheduleMatchWindowMinutes",
+		"schedulerIntervalSec", "retentionDays", "auditRetentionDays", "notifyRetentionDays",
+	},
+	BaseSectionAlarm: {"dedupeAlerts", "requireAgentToken"},
+}
+
+var agentSettingKeys = []string{"reportIntervalSec", "httpTimeoutSec", "wsBackoffMinSec", "wsBackoffMaxSec"}
+
+// MergeAppSettingsPatch 用 patch 中出现的字段覆盖当前参数，未提交字段保持原值；
+// section 为已知区块时只应用该区块字段，为空或未知时按字段存在性合并。
+func MergeAppSettingsPatch(current AppSettings, patch map[string]any, section string) map[string]any {
+	merged := AppSettingsMap(current)
+	if keys, ok := settingsSectionKeys[section]; ok {
+		applySettingKeys(merged, patch, keys)
+		return merged
+	}
+	if section == BaseSectionAgent {
+		mergeAgentSettings(merged, patch)
+		return merged
+	}
+	for key, value := range patch {
+		if key == "agent" {
+			mergeAgentSettings(merged, patch)
+			continue
+		}
+		if value != nil {
+			merged[key] = value
+		}
+	}
+	return merged
+}
+
+func applySettingKeys(target, patch map[string]any, keys []string) {
+	for _, key := range keys {
+		if value, ok := patch[key]; ok && value != nil {
+			target[key] = value
+		}
+	}
+}
+
+func mergeAgentSettings(target, patch map[string]any) {
+	agentPatch, ok := patch["agent"].(map[string]any)
+	if !ok {
+		return
+	}
+	agent, ok := target["agent"].(map[string]any)
+	if !ok {
+		agent = map[string]any{}
+		target["agent"] = agent
+	}
+	applySettingKeys(agent, agentPatch, agentSettingKeys)
+}
+
 // MergeAppSettingsSections 将基础配置各区块合并为基础参数，缺失字段回填默认值。
 func MergeAppSettingsSections(sections map[string]map[string]any) AppSettings {
 	merged := map[string]any{}

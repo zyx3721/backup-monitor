@@ -33,8 +33,9 @@ func (a *Router) handleSaveSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	delete(body, "section")
 	previous := a.svc.Settings()
-	settings := domain.NormalizeAppSettings(body)
-	if errText := domain.ValidateAppSettings(body); errText != "" {
+	merged := domain.MergeAppSettingsPatch(previous, body, section)
+	settings := domain.NormalizeAppSettings(merged)
+	if errText := domain.ValidateAppSettings(merged); errText != "" {
 		common.WriteError(w, http.StatusBadRequest, errText)
 		return
 	}

@@ -119,6 +119,88 @@ func TestValidateAppSettingsAcceptsDefaults(t *testing.T) {
 	}
 }
 
+func customAppSettings() AppSettings {
+	return AppSettings{
+		ReportTimeoutMinutes: 5, OfflineTimeoutMinutes: 10, NotRunGraceMinutes: 45,
+		ScheduleMatchWindowMinutes: 90, SchedulerIntervalSec: 60,
+		DedupeAlerts: false, RetentionDays: 30, AuditRetentionDays: 30, NotifyRetentionDays: 30, RequireAgentToken: true,
+		Agent: AgentGlobalConfig{ReportIntervalSec: 120, HTTPTimeoutSec: 30, WSBackoffMinSec: 5, WSBackoffMaxSec: 60},
+	}
+}
+
+func TestAppSettingsSectionKeysCoverAllFields(t *testing.T) {
+	sections := DefaultAppSettings().Sections()
+	for name, keys := range settingsSectionKeys {
+		section := sections[name]
+		if len(section) != len(keys) {
+			t.Fatalf("%s keys = %d, fields = %d", name, len(keys), len(section))
+		}
+		for _, key := range keys {
+			if _, ok := section[key]; !ok {
+				t.Fatalf("%s missing key %s", name, key)
+			}
+		}
+	}
+	agent := sections[BaseSectionAgent]
+	if len(agent) != len(agentSettingKeys) {
+		t.Fatalf("agent keys = %d, fields = %d", len(agentSettingKeys), len(agent))
+	}
+	for _, key := range agentSettingKeys {
+		if _, ok := agent[key]; !ok {
+			t.Fatalf("agent missing key %s", key)
+		}
+	}
+}
+
+func TestMergeAppSettingsPatchKeepsUnsubmittedFields(t *testing.T) {
+	current := customAppSettings()
+	merged := NormalizeAppSettings(MergeAppSettingsPatch(current, map[string]any{"reportTimeoutMinutes": float64(8)}, ""))
+	want := current
+	want.ReportTimeoutMinutes = 8
+	if merged != want {
+		t.Fatalf("merged = %+v, want %+v", merged, want)
+	}
+}
+
+func TestMergeAppSettingsPatchSectionKeepsOtherSections(t *testing.T) {
+	current := customAppSettings()
+	merged := NormalizeAppSettings(MergeAppSettingsPatch(current, map[string]any{
+		"reportTimeoutMinutes": float64(8),
+		"retentionDays":        float64(60),
+		"agent":                map[string]any{"reportIntervalSec": float64(300)},
+		"dedupeAlerts":         true,
+	}, BaseSectionThresholds))
+	want := current
+	want.ReportTimeoutMinutes = 8
+	want.RetentionDays = 60
+	if merged != want {
+		t.Fatalf("merged = %+v, want %+v", merged, want)
+	}
+}
+
+func TestMergeAppSettingsPatchAgentPartial(t *testing.T) {
+	current := customAppSettings()
+	merged := NormalizeAppSettings(MergeAppSettingsPatch(current, map[string]any{
+		"agent": map[string]any{"httpTimeoutSec": float64(40)},
+	}, BaseSectionAgent))
+	want := current
+	want.Agent.HTTPTimeoutSec = 40
+	if merged != want {
+		t.Fatalf("merged = %+v, want %+v", merged, want)
+	}
+}
+
+func TestMergeAppSettingsPatchIgnoresNullAndUnknownKeys(t *testing.T) {
+	current := customAppSettings()
+	merged := NormalizeAppSettings(MergeAppSettingsPatch(current, map[string]any{
+		"retentionDays": nil,
+		"unknownKey":    "ignored",
+	}, ""))
+	if merged != current {
+		t.Fatalf("merged = %+v, want %+v", merged, current)
+	}
+}
+
 func TestAppSettingsSectionsRoundTrip(t *testing.T) {
 	custom := AppSettings{
 		ReportTimeoutMinutes: 10, OfflineTimeoutMinutes: 30, NotRunGraceMinutes: 45,

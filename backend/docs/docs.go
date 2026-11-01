@@ -1866,7 +1866,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "按 section 更新判定与保留、Agent 通道或安全与告警参数并写入审计（权限 settings.base.manage）",
+                "description": "按 section 或字段合并更新判定与保留、Agent 通道或安全与告警参数并写入审计，未提交字段保持原值（权限 settings.base.manage）",
                 "consumes": [
                     "application/json"
                 ],
@@ -1879,7 +1879,7 @@ const docTemplate = `{
                 "summary": "更新备份参数",
                 "parameters": [
                     {
-                        "description": "备份参数，section 取值 thresholds/agent/alarm",
+                        "description": "备份参数；section 取值 thresholds/agent/alarm，未提交字段保持现值",
                         "name": "request",
                         "in": "body",
                         "required": true,

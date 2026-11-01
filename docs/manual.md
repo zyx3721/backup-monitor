@@ -1181,7 +1181,7 @@ server {
 **备份参数**（权限 `settings.base`）
 
 - `GET /api/backup/settings` - 获取备份参数：判定阈值、保留策略与 Agent 通道参数（权限 `.read`）
-- `PUT /api/backup/settings` - 更新备份参数：按 `section` 更新判定与保留、Agent 通道或安全与告警参数并写入审计；WS 重连退避需满足上限不小于下限（权限 `.manage`）
+- `PUT /api/backup/settings` - 更新备份参数：按 `section` 更新判定与保留、Agent 通道或安全与告警参数并写入审计，未提交字段保持原值；WS 重连退避需满足上限不小于下限（权限 `.manage`）
 
 ### 5.2.6 Agent 通道
 
