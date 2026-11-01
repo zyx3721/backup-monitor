@@ -31,6 +31,7 @@ export type BackupTask = {
   tool?: string;
   schedule: string;
   scheduleCron?: string;
+  scheduleLocked: boolean;
   scheduleParsed: boolean;
   scheduleDisabled: boolean;
   status: TaskStatus;
