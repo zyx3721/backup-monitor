@@ -1,10 +1,11 @@
-import { ArrowLeft, CalendarClock, Clock, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarClock, Check, CircleHelp, Clock, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/dialogs/confirm-dialog';
+import { AppTooltip } from '@/components/feedback/app-tooltip';
 import {
   Dialog,
   DialogContent,
@@ -447,19 +448,29 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
                     当前计划已锁定为「仅服务端判定」；取消勾选后保存即可解除锁定并重新下发 Agent
                   </p>
                 ) : null}
-                <label className="flex items-start gap-2 text-sm text-[var(--bm-text)]">
+                <label className="inline-flex cursor-pointer items-center gap-2.5 rounded-lg border border-[var(--bm-border)]/60 bg-[var(--bm-control-bg-soft)] px-3 py-2 text-sm text-[var(--bm-text)] transition-colors hover:border-[var(--bm-accent)]/50 has-[:checked]:border-[var(--bm-accent)]/60 has-[:checked]:bg-[var(--bm-accent)]/[0.08]">
                   <input
                     type="checkbox"
-                    className="mt-0.5 h-4 w-4 accent-[var(--bm-text)]"
+                    className="peer sr-only"
                     checked={serverOnly}
                     onChange={event => setServerOnly(event.target.checked)}
                   />
-                  <span>
-                    仅服务端判定（不下发 Agent）
-                    <span className="mt-1 block text-xs leading-5 text-[var(--bm-text-muted)]">
-                      适用于无法由 Agent 改写计划的任务；保存后该 cron 只用于「未执行」判定，后续上报不会覆盖
-                    </span>
+                  <span
+                    aria-hidden="true"
+                    className="grid h-4 w-4 shrink-0 place-items-center rounded border border-[var(--bm-border)] text-transparent transition-colors peer-checked:border-[var(--bm-accent)] peer-checked:bg-[var(--bm-accent)] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--bm-accent)]/40"
+                  >
+                    <Check size={11} strokeWidth={3} />
                   </span>
+                  <AppTooltip
+                    label="适用于无法由 Agent 改写计划的任务；保存后该 cron 只用于「未执行」判定，后续上报不会覆盖"
+                    placement="top"
+                    wrap
+                  >
+                    <span className="inline-flex cursor-help items-center gap-1">
+                      仅服务端判定（不下发 Agent）
+                      <CircleHelp size={12} className="opacity-60" />
+                    </span>
+                  </AppTooltip>
                 </label>
                 {!serverOnly ? (
                   <p className="text-sm leading-6 text-[var(--bm-text-muted)]">
