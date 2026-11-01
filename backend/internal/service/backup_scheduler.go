@@ -80,7 +80,7 @@ func (s *BackupService) RunScheduler(now time.Time) {
 
 func (s *BackupService) cleanup(now time.Time) {
 	settings := s.Settings()
-	if settings.RetentionDays <= 0 && settings.AuditRetentionDays <= 0 {
+	if settings.RetentionDays <= 0 && settings.AuditRetentionDays <= 0 && settings.NotifyRetentionDays <= 0 {
 		return
 	}
 	s.mu.Lock()
