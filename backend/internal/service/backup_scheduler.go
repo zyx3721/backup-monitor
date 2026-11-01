@@ -51,7 +51,7 @@ func (s *BackupService) RunScheduler(now time.Time) {
 		if status == string(domain.HostAbnormal) || status == string(domain.HostOffline) {
 			s.AlertReportTimeout(host.ID, host.Hostname, status, reason)
 			unreachable[host.ID] = true
-			s.ResolveHostTaskAlerts(host.ID, []string{"backup_failed", "not_run"})
+			s.ResolveHostTaskAlerts(host.ID, []string{"backup_failed"})
 		} else {
 			s.ResolveAlerts("report_timeout", "", host.ID)
 		}
