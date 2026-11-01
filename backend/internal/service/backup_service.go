@@ -196,9 +196,6 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 	}
 	settings := s.Settings()
 	window := time.Duration(settings.ScheduleMatchWindowMinutes) * time.Minute
-	if window <= 0 {
-		window = 10 * time.Minute
-	}
 	created, createdOK := time.Time{}, false
 	if scheduledLatest != nil {
 		if parsed, err := parseTime(scheduledLatest.CreationTime); err == nil {
