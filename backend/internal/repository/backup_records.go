@@ -102,6 +102,22 @@ func (r *BackupRepository) LatestExecution(taskID string) (*domain.BackupExecuti
 	return &exec, nil
 }
 
+// LatestScheduledExecution 返回任务最近一次非手动触发的执行，供计划匹配使用。
+func (r *BackupRepository) LatestScheduledExecution(taskID string) (*domain.BackupExecution, error) {
+	row := r.db.QueryRow(`SELECT id,task_id,'','','','',COALESCE(session_id,''),COALESCE(job_id,''),COALESCE(oib_id,''),state,
+		COALESCE(trigger,''),creation_time,COALESCE(start_time,''),COALESCE(end_time,''),COALESCE(processed_size,''),
+		COALESCE(transferred_size,''),COALESCE(artifact_path,''),exit_code,attempt,max_attempts,is_last_attempt,COALESCE(message,'')
+		FROM executions WHERE task_id=? AND COALESCE(trigger,'') <> 'manual' ORDER BY creation_time DESC LIMIT 1`, taskID)
+	exec, err := scanExecution(row)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &exec, nil
+}
+
 // ExecutionStates 返回按任务分组的执行状态序列（创建时间倒序），供统计连续失败与成功率。
 func (r *BackupRepository) ExecutionStates() (map[string][]domain.BackupExecution, error) {
 	rows, err := r.db.Query(`SELECT id,task_id,'','','','',COALESCE(session_id,''),COALESCE(job_id,''),COALESCE(oib_id,''),state,

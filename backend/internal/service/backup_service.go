@@ -168,12 +168,22 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 	if err != nil {
 		return TaskEvaluation{Status: string(domain.TaskNoData)}
 	}
+	scheduledLatest, err := s.repo.LatestScheduledExecution(taskID)
+	if err != nil {
+		return TaskEvaluation{Status: string(domain.TaskNoData)}
+	}
 	evaluation := TaskEvaluation{Latest: latest}
 	statusFromLatest := func() string {
 		if latest == nil {
 			return string(domain.TaskNoData)
 		}
 		return executionStateToTaskStatus(latest.State)
+	}
+	statusFromScheduled := func() string {
+		if scheduledLatest == nil {
+			return string(domain.TaskNoData)
+		}
+		return executionStateToTaskStatus(scheduledLatest.State)
 	}
 	schedule := task.ScheduleCron
 	if schedule == "" {
@@ -190,8 +200,8 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 		window = 10 * time.Minute
 	}
 	created, createdOK := time.Time{}, false
-	if latest != nil {
-		if parsed, err := parseTime(latest.CreationTime); err == nil {
+	if scheduledLatest != nil {
+		if parsed, err := parseTime(scheduledLatest.CreationTime); err == nil {
 			created, createdOK = parsed, true
 		}
 	}
@@ -202,7 +212,7 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 		return evaluation
 	}
 	if evaluation.Matched {
-		evaluation.Status = statusFromLatest()
+		evaluation.Status = statusFromScheduled()
 		return evaluation
 	}
 	evaluation.Status = string(domain.TaskNotRun)

@@ -103,8 +103,18 @@ func parseCronField(field string, min, max int) (fieldMatcher, error) {
 	}, nil
 }
 
+// maxScheduleScanDays 计划搜索上限，覆盖闰年 2 月 29 日等最长周期。
+const maxScheduleScanDays = 8 * 366
+
 // Matches 判断时间是否命中表达式（周字段 7 视为周日）。
 func (c *Cron) Matches(t time.Time) bool {
+	if c == nil {
+		return false
+	}
+	return c.matchesDate(t) && c.minute(t.Minute()) && c.hour(t.Hour())
+}
+
+func (c *Cron) matchesDate(t time.Time) bool {
 	if c == nil {
 		return false
 	}
@@ -112,7 +122,7 @@ func (c *Cron) Matches(t time.Time) bool {
 	if !c.dow(dow) && !(dow == 0 && c.dow(7)) {
 		return false
 	}
-	return c.minute(t.Minute()) && c.hour(t.Hour()) && c.dom(t.Day()) && c.month(int(t.Month()))
+	return c.dom(t.Day()) && c.month(int(t.Month()))
 }
 
 // LastScheduled 返回不晚于 now 的最近一次计划时刻。
@@ -122,11 +132,25 @@ func LastScheduled(expr string, now time.Time) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	cursor := now.Truncate(time.Minute)
-	for i := 0; i < 64*24*60; i++ {
-		if cron.Matches(cursor) {
-			return cursor, true
+	for day := 0; day <= maxScheduleScanDays; day++ {
+		date := cursor.AddDate(0, 0, -day)
+		if !cron.matchesDate(date) {
+			continue
 		}
-		cursor = cursor.Add(-time.Minute)
+		lastMinute := 24*60 - 1
+		if day == 0 {
+			lastMinute = date.Hour()*60 + date.Minute()
+		}
+		for minute := lastMinute; minute >= 0; minute-- {
+			hour, min := minute/60, minute%60
+			if !cron.hour(hour) || !cron.minute(min) {
+				continue
+			}
+			candidate := time.Date(date.Year(), date.Month(), date.Day(), hour, min, 0, 0, date.Location())
+			if !candidate.After(now) {
+				return candidate, true
+			}
+		}
 	}
 	return time.Time{}, false
 }
@@ -138,11 +162,25 @@ func NextScheduled(expr string, after time.Time) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	cursor := after.Truncate(time.Minute).Add(time.Minute)
-	for i := 0; i < 64*24*60; i++ {
-		if cron.Matches(cursor) {
-			return cursor, true
+	for day := 0; day <= maxScheduleScanDays; day++ {
+		date := cursor.AddDate(0, 0, day)
+		if !cron.matchesDate(date) {
+			continue
 		}
-		cursor = cursor.Add(time.Minute)
+		firstMinute := 0
+		if day == 0 {
+			firstMinute = date.Hour()*60 + date.Minute()
+		}
+		for minute := firstMinute; minute < 24*60; minute++ {
+			hour, min := minute/60, minute%60
+			if !cron.hour(hour) || !cron.minute(min) {
+				continue
+			}
+			candidate := time.Date(date.Year(), date.Month(), date.Day(), hour, min, 0, 0, date.Location())
+			if !candidate.Before(cursor) {
+				return candidate, true
+			}
+		}
 	}
 	return time.Time{}, false
 }

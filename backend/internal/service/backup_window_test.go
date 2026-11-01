@@ -72,6 +72,70 @@ func TestTaskMatchWindowIsSymmetric(t *testing.T) {
 	}
 }
 
+func TestManualExecutionDoesNotSatisfyPlan(t *testing.T) {
+	svc := newTestService(t)
+	settings := domain.DefaultAppSettings()
+	settings.ScheduleMatchWindowMinutes = 60
+	settings.NotRunGraceMinutes = 1
+	if err := svc.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
+	report := windowReport(plan, nil)
+	report.Executions = []domain.IngestExecution{{
+		TaskName: "window-task", SessionID: "manual-1", State: "success", Trigger: "manual",
+		CreationTime: plan.Add(30 * time.Minute).UTC().Format(time.RFC3339),
+		StartTime:    plan.Add(31 * time.Minute).UTC().Format(time.RFC3339),
+		EndTime:      plan.Add(32 * time.Minute).UTC().Format(time.RFC3339),
+	}}
+	if _, err := svc.Ingest(t.Context(), report); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	tasks, err := svc.Repo().ListTasks()
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("tasks = %d, err = %v", len(tasks), err)
+	}
+	if got := svc.RecomputeTaskStatus(tasks[0].ID, plan.Add(40*time.Minute)); got != "not_run" {
+		t.Fatalf("status = %s, want not_run", got)
+	}
+}
+
+func TestScheduledExecutionSatisfiesPlanAlongsideManual(t *testing.T) {
+	svc := newTestService(t)
+	settings := domain.DefaultAppSettings()
+	settings.ScheduleMatchWindowMinutes = 60
+	settings.NotRunGraceMinutes = 1
+	if err := svc.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
+	report := windowReport(plan, nil)
+	report.Executions = []domain.IngestExecution{
+		{
+			TaskName: "window-task", SessionID: "sched-1", State: "success", Trigger: "scheduled",
+			CreationTime: plan.Add(5 * time.Minute).UTC().Format(time.RFC3339),
+			StartTime:    plan.Add(6 * time.Minute).UTC().Format(time.RFC3339),
+			EndTime:      plan.Add(7 * time.Minute).UTC().Format(time.RFC3339),
+		},
+		{
+			TaskName: "window-task", SessionID: "manual-1", State: "success", Trigger: "manual",
+			CreationTime: plan.Add(30 * time.Minute).UTC().Format(time.RFC3339),
+			StartTime:    plan.Add(31 * time.Minute).UTC().Format(time.RFC3339),
+			EndTime:      plan.Add(32 * time.Minute).UTC().Format(time.RFC3339),
+		},
+	}
+	if _, err := svc.Ingest(t.Context(), report); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	tasks, err := svc.Repo().ListTasks()
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("tasks = %d, err = %v", len(tasks), err)
+	}
+	if got := svc.RecomputeTaskStatus(tasks[0].ID, plan.Add(40*time.Minute)); got != "normal" {
+		t.Fatalf("status = %s, want normal", got)
+	}
+}
+
 func TestNotRunAlertResolvesOnlyForOwnPlan(t *testing.T) {
 	svc := newTestService(t)
 	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)

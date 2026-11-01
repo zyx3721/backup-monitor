@@ -1,6 +1,9 @@
 package service
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestParseCronAndSchedule(t *testing.T) {
 	cases := []struct {
@@ -48,6 +51,26 @@ func TestCronValidation(t *testing.T) {
 		if IsValidCron(expr) {
 			t.Fatalf("expected invalid: %s", expr)
 		}
+	}
+}
+
+func TestLastScheduledLongCycle(t *testing.T) {
+	now := time.Date(2027, 7, 20, 0, 0, 0, 0, time.Local)
+	quarterly, ok := LastScheduled("0 0 1 1,4,7,10 *", now)
+	if !ok || !quarterly.Equal(time.Date(2027, 7, 1, 0, 0, 0, 0, time.Local)) {
+		t.Fatalf("quarterly last = %v (ok=%v)", quarterly, ok)
+	}
+	yearly, ok := LastScheduled("0 0 1 1 *", now)
+	if !ok || !yearly.Equal(time.Date(2027, 1, 1, 0, 0, 0, 0, time.Local)) {
+		t.Fatalf("yearly last = %v (ok=%v)", yearly, ok)
+	}
+	next, ok := NextScheduled("0 0 1 1 *", now)
+	if !ok || !next.Equal(time.Date(2028, 1, 1, 0, 0, 0, 0, time.Local)) {
+		t.Fatalf("yearly next = %v (ok=%v)", next, ok)
+	}
+	leap, ok := NextScheduled("0 0 29 2 *", time.Date(2025, 3, 1, 0, 0, 0, 0, time.Local))
+	if !ok || !leap.Equal(time.Date(2028, 2, 29, 0, 0, 0, 0, time.Local)) {
+		t.Fatalf("leap next = %v (ok=%v)", leap, ok)
 	}
 }
 
