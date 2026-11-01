@@ -309,7 +309,7 @@ export function ExecutionsPage() {
         open={clearOpen}
         title="清空执行记录"
         description="清空后不可恢复"
-        detail={`确定清空当前筛选后的 ${filtered.length} 条执行记录吗？`}
+        detail={`确定清空当前筛选后的 ${filtered.length} 条执行记录吗？清空后相关任务会在下次巡检重新判定，可能重新产生「未执行」告警。`}
         confirmText="确认清空"
         icon="delete"
         horizontalHeader
