@@ -133,56 +133,84 @@ func (s *BackupService) RecomputeHostStatus(hostID string, now time.Time) string
 	return status
 }
 
+// TaskEvaluation 记录一次任务判定：状态、命中的计划时刻、是否命中窗口内记录与原因。
+type TaskEvaluation struct {
+	Status  string
+	Plan    time.Time
+	Matched bool
+	Reason  string
+	Latest  *domain.BackupExecution
+}
+
+// RecomputeTask 重新判定任务并写回状态与最近执行时间。
+func (s *BackupService) RecomputeTask(taskID string, now time.Time) TaskEvaluation {
+	evaluation := s.EvaluateTask(taskID, now)
+	lastExecTime := ""
+	if evaluation.Latest != nil {
+		lastExecTime = preferredExecutionTime(evaluation.Latest.StartTime, evaluation.Latest.CreationTime)
+	}
+	_, _ = s.repo.DB().Exec(`UPDATE tasks SET status=?, last_execution_time=? WHERE id=?`, evaluation.Status, lastExecTime, taskID)
+	return evaluation
+}
+
 // RecomputeTaskStatus 综合计划与最新执行重算任务状态。
 func (s *BackupService) RecomputeTaskStatus(taskID string, now time.Time) string {
+	return s.RecomputeTask(taskID, now).Status
+}
+
+// EvaluateTask 按计划与匹配窗口判定任务状态，不写库。
+func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluation {
 	task, err := s.repo.GetTask(taskID)
 	if err != nil || task == nil {
-		return string(domain.TaskNoData)
+		return TaskEvaluation{Status: string(domain.TaskNoData)}
 	}
 	latest, err := s.repo.LatestExecution(taskID)
 	if err != nil {
-		return string(domain.TaskNoData)
+		return TaskEvaluation{Status: string(domain.TaskNoData)}
 	}
-	lastExecTime := ""
-	if latest != nil {
-		lastExecTime = preferredExecutionTime(latest.StartTime, latest.CreationTime)
+	evaluation := TaskEvaluation{Latest: latest}
+	statusFromLatest := func() string {
+		if latest == nil {
+			return string(domain.TaskNoData)
+		}
+		return executionStateToTaskStatus(latest.State)
 	}
-	status := string(domain.TaskNoData)
 	schedule := task.ScheduleCron
 	if schedule == "" {
 		schedule = CronFromHuman(task.Schedule)
 	}
-	if scheduled, ok := LastScheduled(schedule, now); ok {
-		grace := time.Duration(s.Settings().NotRunGraceMinutes) * time.Minute
-		if now.Sub(scheduled) <= grace {
-			if latest != nil {
-				status = executionStateToTaskStatus(latest.State)
-			}
-		} else {
-			window := time.Duration(s.Settings().ScheduleMatchWindowMinutes) * time.Minute
-			if window <= 0 {
-				window = 10 * time.Minute
-			}
-			windowStart := scheduled.Add(-window)
-			windowEnd := scheduled.Add(7 * 24 * time.Hour)
-			if next, ok := NextScheduled(schedule, scheduled); ok {
-				windowEnd = next
-			}
-			if latest != nil {
-				if created, err := parseTime(latest.CreationTime); err == nil && !created.Before(windowStart) && created.Before(windowEnd) {
-					status = executionStateToTaskStatus(latest.State)
-				} else {
-					status = string(domain.TaskNotRun)
-				}
-			} else {
-				status = string(domain.TaskNotRun)
-			}
-		}
-	} else if latest != nil {
-		status = executionStateToTaskStatus(latest.State)
+	scheduled, ok := LastScheduled(schedule, now)
+	if !ok {
+		evaluation.Status = statusFromLatest()
+		return evaluation
 	}
-	_, _ = s.repo.DB().Exec(`UPDATE tasks SET status=?, last_execution_time=? WHERE id=?`, status, lastExecTime, taskID)
-	return status
+	settings := s.Settings()
+	window := time.Duration(settings.ScheduleMatchWindowMinutes) * time.Minute
+	if window <= 0 {
+		window = 10 * time.Minute
+	}
+	created, createdOK := time.Time{}, false
+	if latest != nil {
+		if parsed, err := parseTime(latest.CreationTime); err == nil {
+			created, createdOK = parsed, true
+		}
+	}
+	evaluation.Plan = scheduled
+	evaluation.Matched = createdOK && !created.Before(scheduled.Add(-window)) && !created.After(scheduled.Add(window))
+	if now.Sub(scheduled) <= time.Duration(settings.NotRunGraceMinutes)*time.Minute {
+		evaluation.Status = statusFromLatest()
+		return evaluation
+	}
+	if evaluation.Matched {
+		evaluation.Status = statusFromLatest()
+		return evaluation
+	}
+	evaluation.Status = string(domain.TaskNotRun)
+	evaluation.Reason = "missing"
+	if createdOK && created.After(scheduled.Add(window)) {
+		evaluation.Reason = "late"
+	}
+	return evaluation
 }
 
 func executionStateToTaskStatus(state string) string {
@@ -200,6 +228,11 @@ func parseTime(value string) (time.Time, error) {
 }
 
 const dedupeOffSuppress = time.Hour
+
+// alertPlanLayout 未执行告警里记录的计划时刻格式，用于按计划周期恢复告警。
+const alertPlanLayout = "2006-01-02 15:04"
+
+var alertPlanPattern = regexp.MustCompile(`计划于 (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) 执行`)
 
 type alertParams struct {
 	Type     string
@@ -308,6 +341,63 @@ func (s *BackupService) ResolveAlerts(alertType, taskID, hostID string) {
 	}
 }
 
+// ResolveNotRunAlertsForPlan 只恢复同一计划周期的未执行告警，跨周期执行不解除旧告警。
+func (s *BackupService) ResolveNotRunAlertsForPlan(taskID string, plan time.Time) {
+	if taskID == "" || plan.IsZero() {
+		return
+	}
+	key := plan.Format(alertPlanLayout)
+	rows, err := s.repo.DB().Query(`SELECT id,host_id,host_name,COALESCE(task_name,''),level,COALESCE(message,'')
+		FROM alerts WHERE type='not_run' AND task_id=? AND status='active'`, taskID)
+	if err != nil {
+		return
+	}
+	type planAlert struct {
+		id  string
+		row resolvedAlertRow
+	}
+	matched := make([]planAlert, 0, 1)
+	for rows.Next() {
+		var id string
+		var row resolvedAlertRow
+		if rows.Scan(&id, &row.HostID, &row.HostName, &row.TaskName, &row.Level, &row.Message) != nil {
+			continue
+		}
+		if alertPlanKey(row.Message) == key {
+			matched = append(matched, planAlert{id: id, row: row})
+		}
+	}
+	rows.Close()
+	if len(matched) == 0 {
+		return
+	}
+	now := appcommon.NowTimestamp()
+	for _, item := range matched {
+		_, _ = s.repo.DB().Exec(`UPDATE alerts SET status='resolved', resolved_at=? WHERE id=?`, now, item.id)
+	}
+	for _, item := range matched {
+		hostIP := ""
+		if host, err := s.repo.GetHost(item.row.HostID); err == nil && host != nil {
+			hostIP = host.IP
+		}
+		go func(row resolvedAlertRow, hostIP string) {
+			_ = s.NotifyRecover(NotifyInput{Type: "not_run", Level: row.Level, Message: row.Message,
+				HostName: row.HostName, HostIP: hostIP, TaskName: row.TaskName})
+		}(item.row, hostIP)
+	}
+}
+
+func alertPlanKey(message string) string {
+	match := alertPlanPattern.FindStringSubmatch(message)
+	if match == nil {
+		return ""
+	}
+	if _, err := time.ParseInLocation(alertPlanLayout, match[1], time.Local); err != nil {
+		return ""
+	}
+	return match[1]
+}
+
 // ResolveHostTaskAlerts 抑制主机失联期间的任务告警（不推送恢复通知）。
 func (s *BackupService) ResolveHostTaskAlerts(hostID string, types []string) {
 	for _, alertType := range types {
@@ -325,10 +415,15 @@ func (s *BackupService) alertBackupFailed(task *domain.BackupTask, execution *do
 		HostName: task.HostName, TaskName: task.Name, Message: message})
 }
 
-func (s *BackupService) alertNotRun(task *domain.BackupTask, scheduled time.Time) {
+// alertNotRun 生成未执行/未按时执行告警，消息内记录完整计划时刻以便按周期恢复。
+func (s *BackupService) alertNotRun(task *domain.BackupTask, plan time.Time, reason string) {
+	when := plan.Format(alertPlanLayout)
+	message := fmt.Sprintf("任务 %s 计划于 %s 执行，但未检测到对应执行记录", task.Name, when)
+	if reason == "late" {
+		message = fmt.Sprintf("任务 %s 计划于 %s 执行，但执行记录晚于匹配窗口", task.Name, when)
+	}
 	s.RaiseAlert(alertParams{Type: "not_run", Level: "critical", HostID: task.HostID, TaskID: task.ID,
-		HostName: task.HostName, TaskName: task.Name,
-		Message: fmt.Sprintf("任务 %s 计划于 %s 执行，但未检测到对应执行记录", task.Name, scheduled.Format("15:04"))})
+		HostName: task.HostName, TaskName: task.Name, Message: message})
 }
 
 // AlertReportTimeout 产生主机上报超时/离线告警。
@@ -457,29 +552,20 @@ func (s *BackupService) Ingest(ctx context.Context, report domain.IngestReport) 
 	s.RecomputeHostStatus(hostID, time.Now())
 	s.ResolveAlerts("report_timeout", "", hostID)
 	for _, task := range taskMap {
-		status := s.RecomputeTaskStatus(task.ID, time.Now())
-		latest, _ := s.repo.LatestExecution(task.ID)
-		if latest != nil {
+		evaluation := s.RecomputeTask(task.ID, time.Now())
+		if evaluation.Matched {
+			s.ResolveNotRunAlertsForPlan(task.ID, evaluation.Plan)
+		}
+		if latest := evaluation.Latest; latest != nil {
 			switch latest.State {
 			case "failed":
 				s.alertBackupFailed(&task, latest)
 			case "success":
 				s.ResolveAlerts("backup_failed", task.ID, "")
-				s.ResolveAlerts("not_run", task.ID, "")
-			default:
-				s.ResolveAlerts("not_run", task.ID, "")
 			}
 		}
-		if status == string(domain.TaskNotRun) {
-			schedule := task.ScheduleCron
-			if schedule == "" {
-				schedule = CronFromHuman(task.Schedule)
-			}
-			if scheduled, ok := LastScheduled(schedule, time.Now()); ok {
-				s.alertNotRun(&task, scheduled)
-			}
-		} else {
-			s.ResolveAlerts("not_run", task.ID, "")
+		if evaluation.Status == string(domain.TaskNotRun) {
+			s.alertNotRun(&task, evaluation.Plan, evaluation.Reason)
 		}
 	}
 	return IngestResult{HostID: hostID, NewExecutions: newExecutions}, nil

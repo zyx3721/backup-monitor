@@ -67,17 +67,12 @@ func (s *BackupService) RunScheduler(now time.Time) {
 		if unreachable[task.HostID] {
 			continue
 		}
-		status := s.RecomputeTaskStatus(task.ID, now)
-		if status == string(domain.TaskNotRun) {
-			schedule := task.ScheduleCron
-			if schedule == "" {
-				schedule = CronFromHuman(task.Schedule)
-			}
-			if scheduled, ok := LastScheduled(schedule, now); ok {
-				s.alertNotRun(task, scheduled)
-			}
-		} else {
-			s.ResolveAlerts("not_run", task.ID, "")
+		evaluation := s.RecomputeTask(task.ID, now)
+		if evaluation.Matched {
+			s.ResolveNotRunAlertsForPlan(task.ID, evaluation.Plan)
+		}
+		if evaluation.Status == string(domain.TaskNotRun) {
+			s.alertNotRun(task, evaluation.Plan, evaluation.Reason)
 		}
 	}
 	s.cleanup(now)

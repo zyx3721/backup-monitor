@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"database/sql"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -38,11 +39,15 @@ func newTestService(t *testing.T) *service.BackupService {
 }
 
 func sampleReport() domain.IngestReport {
-	base := time.Now().UTC().Add(-10 * time.Minute).Truncate(time.Second)
+	now := time.Now()
+	local := now.Add(-10 * time.Minute).Truncate(time.Minute)
+	base := now.UTC().Add(-10 * time.Minute).Truncate(time.Second)
+	cron := fmt.Sprintf("%d %d * * *", local.Minute(), local.Hour())
 	return domain.IngestReport{
 		Host: domain.IngestHost{Hostname: "db-01", NodeID: "node-1", IP: "10.0.0.11", OS: "linux", Role: "database", AgentVersion: "1.0.0"},
 		Tasks: []domain.IngestTask{{
-			Name: "db-backup", Key: "cron:root:0 23 * * *", Type: "shell", Schedule: "每天 23:00", ScheduleCron: "0 23 * * *",
+			Name: "db-backup", Key: "cron:root:" + cron, Type: "shell",
+			Schedule: "每天 " + local.Format("15:04"), ScheduleCron: cron,
 			Config: map[string]any{"source": "crontab", "script": "/opt/backup/db.sh"},
 		}},
 		Executions: []domain.IngestExecution{{
@@ -164,6 +169,8 @@ func TestTaskWithoutExecutionIsNotRun(t *testing.T) {
 	svc := newTestService(t)
 	report := sampleReport()
 	report.Executions = nil
+	report.Tasks[0].Schedule = "每天 23:00"
+	report.Tasks[0].ScheduleCron = "0 23 * * *"
 	if _, err := svc.Ingest(t.Context(), report); err != nil {
 		t.Fatal(err)
 	}
