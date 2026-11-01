@@ -42,14 +42,8 @@ func (s *BackupService) RunScheduler(now time.Time) {
 	unreachable := map[string]bool{}
 	for _, host := range hosts {
 		status := s.RecomputeHostStatus(host.ID, now)
-		reason := "timeout"
-		if s.hub != nil && s.hub.IsDisconnected(host.ID) {
-			status = string(domain.HostOffline)
-			reason = "heartbeat"
-			_, _ = s.repo.DB().Exec(`UPDATE hosts SET status='offline' WHERE id=?`, host.ID)
-		}
 		if status == string(domain.HostAbnormal) || status == string(domain.HostOffline) {
-			s.AlertReportTimeout(host.ID, host.Hostname, status, reason)
+			s.AlertReportTimeout(host.ID, host.Hostname, status)
 			unreachable[host.ID] = true
 			s.ResolveHostTaskAlerts(host.ID, []string{"backup_failed"})
 		} else {

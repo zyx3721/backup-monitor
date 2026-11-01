@@ -8,14 +8,12 @@ import (
 	"time"
 
 	appcommon "backup-monitor-backend/internal/common"
-	"backup-monitor-backend/internal/domain"
 	"backup-monitor-backend/internal/repository"
 
 	"github.com/gorilla/websocket"
 )
 
 const (
-	disconnectGrace  = 15 * time.Second
 	heartbeatTimeout = 90 * time.Second
 	setCronTimeout   = 10 * time.Second
 	updateTimeout    = 20 * time.Second
@@ -28,8 +26,6 @@ type AgentHub struct {
 	mu      sync.Mutex
 	conns   map[string]*agentConn
 	online  map[string]bool
-	down    map[string]bool
-	timers  map[string]*time.Timer
 	pending map[string]chan commandAck
 }
 
@@ -48,7 +44,7 @@ type commandAck struct {
 // NewAgentHub 创建连接中心。
 func NewAgentHub(repo *repository.BackupRepository, svc *BackupService) *AgentHub {
 	hub := &AgentHub{repo: repo, svc: svc, conns: map[string]*agentConn{}, online: map[string]bool{},
-		down: map[string]bool{}, timers: map[string]*time.Timer{}, pending: map[string]chan commandAck{}}
+		pending: map[string]chan commandAck{}}
 	go hub.heartbeatLoop()
 	return hub
 }
@@ -58,20 +54,6 @@ func (h *AgentHub) IsConnected(hostID string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.online[hostID]
-}
-
-// IsDisconnected 判断主机是否因心跳断开被判离线。
-func (h *AgentHub) IsDisconnected(hostID string) bool {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	return h.down[hostID]
-}
-
-// ClearDisconnected 清除心跳断开标记（HTTP 上报成功说明进程仍存活）。
-func (h *AgentHub) ClearDisconnected(hostID string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	delete(h.down, hostID)
 }
 
 // PushConfigChanged 通知所有在线 Agent 重新拉取配置，返回推送连接数。
@@ -234,13 +216,8 @@ func (h *AgentHub) findHost(nodeID, hostname string) (string, string) {
 func (h *AgentHub) register(agent *agentConn, hostname string) {
 	h.mu.Lock()
 	previous := h.conns[agent.hostID]
-	if timer := h.timers[agent.hostID]; timer != nil {
-		timer.Stop()
-		delete(h.timers, agent.hostID)
-	}
 	h.conns[agent.hostID] = agent
 	h.online[agent.hostID] = true
-	delete(h.down, agent.hostID)
 	h.mu.Unlock()
 	if previous != nil {
 		_ = previous.conn.Close()
@@ -259,26 +236,6 @@ func (h *AgentHub) unregister(agent *agentConn) {
 	delete(h.online, agent.hostID)
 	h.mu.Unlock()
 	_ = agent.conn.Close()
-
-	h.mu.Lock()
-	h.timers[agent.hostID] = time.AfterFunc(disconnectGrace, func() {
-		h.mu.Lock()
-		connected := h.online[agent.hostID]
-		delete(h.timers, agent.hostID)
-		if !connected {
-			h.down[agent.hostID] = true
-		}
-		h.mu.Unlock()
-		if connected {
-			return
-		}
-		_, _ = h.repo.DB().Exec(`UPDATE hosts SET status='offline' WHERE id=?`, agent.hostID)
-		host, err := h.repo.GetHost(agent.hostID)
-		if err == nil && host != nil {
-			h.svc.AlertReportTimeout(host.ID, host.Hostname, string(domain.HostOffline), "heartbeat")
-		}
-	})
-	h.mu.Unlock()
 }
 
 func (h *AgentHub) handleMessage(data []byte) {

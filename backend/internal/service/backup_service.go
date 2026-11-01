@@ -425,17 +425,13 @@ func (s *BackupService) alertNotRun(task *domain.BackupTask, plan time.Time, rea
 		HostName: task.HostName, TaskName: task.Name, Message: message})
 }
 
-// AlertReportTimeout 产生主机上报超时/离线告警。
-func (s *BackupService) AlertReportTimeout(hostID, hostname, status, reason string) {
+// AlertReportTimeout 产生主机上报超时/离线告警，主机状态统一由上报时间与阈值决定。
+func (s *BackupService) AlertReportTimeout(hostID, hostname, status string) {
 	settings := s.Settings()
 	offline := status == string(domain.HostOffline)
 	message := fmt.Sprintf("主机 %s 上报异常：超过 %d 分钟未上报", hostname, settings.ReportTimeoutMinutes)
 	if offline {
-		if reason == "heartbeat" {
-			message = fmt.Sprintf("主机 %s 心跳中断，已离线", hostname)
-		} else {
-			message = fmt.Sprintf("主机 %s 已离线：超过离线阈值 %d 分钟未上报", hostname, settings.OfflineTimeoutMinutes)
-		}
+		message = fmt.Sprintf("主机 %s 已离线：超过离线阈值 %d 分钟未上报", hostname, settings.OfflineTimeoutMinutes)
 	}
 	level := "warning"
 	if offline {
@@ -531,9 +527,6 @@ func (s *BackupService) Ingest(ctx context.Context, report domain.IngestReport) 
 		if _, err := tx.Exec(`UPDATE tasks SET host_name=? WHERE host_id=?`, hostname, hostID); err != nil {
 			return IngestResult{}, err
 		}
-	}
-	if s.hub != nil {
-		s.hub.ClearDisconnected(hostID)
 	}
 
 	taskMap, err := upsertTasks(tx, hostID, report.Host.Hostname, tasks)

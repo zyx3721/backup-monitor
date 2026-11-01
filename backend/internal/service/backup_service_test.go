@@ -193,6 +193,9 @@ func TestHostStatusThresholds(t *testing.T) {
 	if got := svc.RecomputeHostStatus(hosts[0].ID, now.Add(2*time.Minute)); got != "normal" {
 		t.Fatalf("2min status = %s", got)
 	}
+	if got := svc.RecomputeHostStatus(hosts[0].ID, now.Add(4*time.Minute)); got != "abnormal" {
+		t.Fatalf("4min status = %s, want abnormal", got)
+	}
 	if got := svc.RecomputeHostStatus(hosts[0].ID, now.Add(10*time.Minute)); got != "offline" {
 		t.Fatalf("10min status = %s", got)
 	}
