@@ -31,6 +31,8 @@ export type BackupTask = {
   tool?: string;
   schedule: string;
   scheduleCron?: string;
+  scheduleParsed: boolean;
+  scheduleDisabled: boolean;
   status: TaskStatus;
   lastExecutionTime?: string;
   lastSuccessTime?: string;

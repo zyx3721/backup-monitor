@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -146,13 +147,14 @@ func NextScheduled(expr string, after time.Time) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-// CronFromHuman 把描述性计划（每天/每周/每小时）转换为 cron，无法识别返回空串。
+// CronFromHuman 把描述性计划（中文或英文）转换为 cron，无法识别返回空串。
 func CronFromHuman(schedule string) string {
 	text := strings.TrimSpace(schedule)
 	if text == "" {
 		return ""
 	}
-	if strings.HasPrefix(text, "每天") {
+	lower := strings.ToLower(text)
+	if strings.HasPrefix(text, "每天") || strings.HasPrefix(text, "每日") {
 		if hour, minute, ok := parseClock(text); ok {
 			return fmt.Sprintf("%d %d * * *", minute, hour)
 		}
@@ -168,32 +170,111 @@ func CronFromHuman(schedule string) string {
 			}
 		}
 	}
+	if strings.HasPrefix(text, "每月") {
+		if day, ok := humanMonthDay(text); ok {
+			if hour, minute, ok := parseClock(text); ok {
+				return fmt.Sprintf("%d %d %d * *", minute, hour, day)
+			}
+			return fmt.Sprintf("0 0 %d * *", day)
+		}
+	}
+	return cronFromEnglish(lower)
+}
+
+// cronFromEnglish 兼容 Agent 早期版本直接透传的英文计划文本。
+func cronFromEnglish(text string) string {
+	clock := func() (int, int, bool) { return parseClock(text) }
+	switch {
+	case strings.Contains(text, "hourly"):
+		return "0 * * * *"
+	case strings.Contains(text, "daily") || strings.Contains(text, "every day"):
+		if hour, minute, ok := clock(); ok {
+			return fmt.Sprintf("%d %d * * *", minute, hour)
+		}
+	case strings.Contains(text, "weekly") || strings.Contains(text, "every week"):
+		if dow, ok := englishWeekday(text); ok {
+			if hour, minute, clockOK := clock(); clockOK {
+				return fmt.Sprintf("%d %d * * %d", minute, hour, dow)
+			}
+		}
+	case strings.Contains(text, "monthly") || strings.Contains(text, "every month"):
+		if day, ok := englishMonthDay(text); ok {
+			if hour, minute, clockOK := clock(); clockOK {
+				return fmt.Sprintf("%d %d %d * *", minute, hour, day)
+			}
+			return fmt.Sprintf("0 0 %d * *", day)
+		}
+	}
 	return ""
 }
 
+func humanMonthDay(text string) (int, bool) {
+	match := monthDayPattern.FindStringSubmatch(text)
+	if match == nil {
+		return 0, false
+	}
+	day, err := strconv.Atoi(match[1])
+	if err != nil || day < 1 || day > 31 {
+		return 0, false
+	}
+	return day, true
+}
+
+func englishMonthDay(text string) (int, bool) {
+	match := englishDayPattern.FindStringSubmatch(text)
+	if match == nil {
+		return 0, false
+	}
+	day, err := strconv.Atoi(match[1])
+	if err != nil || day < 1 || day > 31 {
+		return 0, false
+	}
+	return day, true
+}
+
+func englishWeekday(text string) (int, bool) {
+	weekdays := map[string]int{"sunday": 0, "monday": 1, "tuesday": 2, "wednesday": 3,
+		"thursday": 4, "friday": 5, "saturday": 6}
+	for name, dow := range weekdays {
+		if strings.Contains(text, name) {
+			return dow, true
+		}
+	}
+	return 0, false
+}
+
+var (
+	monthDayPattern   = regexp.MustCompile(`每月\s*(\d{1,2})\s*日`)
+	englishDayPattern = regexp.MustCompile(`day\s+(\d{1,2})`)
+)
+
 func parseClock(text string) (hour, minute int, ok bool) {
-	idx := strings.Index(text, ":")
-	if idx < 0 {
-		return 0, 0, false
+	for idx := 0; idx < len(text); idx++ {
+		if text[idx] != ':' {
+			continue
+		}
+		hourDigits := ""
+		for i := idx - 1; i >= 0 && text[i] >= '0' && text[i] <= '9'; i-- {
+			hourDigits = string(text[i]) + hourDigits
+		}
+		if hourDigits == "" {
+			continue
+		}
+		right := text[idx+1:]
+		if len(right) < 2 || right[0] < '0' || right[0] > '9' || right[1] < '0' || right[1] > '9' {
+			continue
+		}
+		hour, err := strconv.Atoi(hourDigits)
+		if err != nil || hour > 23 {
+			continue
+		}
+		minute, err := strconv.Atoi(right[:2])
+		if err != nil || minute > 59 {
+			continue
+		}
+		return hour, minute, true
 	}
-	left := text[:idx]
-	right := text[idx+1:]
-	hourDigits := ""
-	for i := len(left) - 1; i >= 0 && left[i] >= '0' && left[i] <= '9'; i-- {
-		hourDigits = string(left[i]) + hourDigits
-	}
-	if len(right) < 2 || right[0] < '0' || right[0] > '9' || right[1] < '0' || right[1] > '9' {
-		return 0, 0, false
-	}
-	hour, err := strconv.Atoi(hourDigits)
-	if err != nil || hour > 23 {
-		return 0, 0, false
-	}
-	minute, err = strconv.Atoi(right[:2])
-	if err != nil || minute > 59 {
-		return 0, 0, false
-	}
-	return hour, minute, true
+	return 0, 0, false
 }
 
 // HumanScheduleFromCron 把常见 5 段 cron 转为中文计划描述，无法识别返回空串。

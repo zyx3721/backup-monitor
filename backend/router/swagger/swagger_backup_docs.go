@@ -113,11 +113,11 @@ func swaggerBackupTaskDelete() {}
 // @Accept json
 // @Produce json
 // @Param id path string true "任务 ID"
-// @Param request body swaggerTaskScheduleRequest true "新的 cron 表达式"
+// @Param request body swaggerTaskScheduleRequest true "新的 cron 表达式；serverOnly 为 true 时只写服务端判定计划、不下发 Agent"
 // @Success 200 {object} swaggerGenericObject
 // @Failure 400 {object} swaggerErrorResponse
 // @Failure 404 {object} swaggerErrorResponse
-// @Description 修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回（权限 backup.tasks.manage）
+// @Description 修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回；serverOnly 为 true 时只写服务端判定计划（权限 backup.tasks.manage）
 // @Security BearerAuth
 // @Router /api/backup/tasks/{id}/schedule [put]
 func swaggerBackupTaskSchedule() {}

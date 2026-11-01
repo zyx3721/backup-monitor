@@ -2,6 +2,7 @@ package service
 
 import (
 	"sort"
+	"strings"
 	"time"
 
 	"backup-monitor-backend/internal/domain"
@@ -72,6 +73,7 @@ func (s *BackupService) DecorateTasks(tasks []domain.BackupTask) []domain.Backup
 		return tasks
 	}
 	for i := range tasks {
+		tasks[i].ScheduleParsed, tasks[i].ScheduleDisabled = scheduleJudgement(tasks[i])
 		if item, ok := stats[tasks[i].ID]; ok {
 			tasks[i].ConsecutiveFailures = item.ConsecutiveFailures
 			tasks[i].SuccessRate = item.SuccessRate
@@ -80,6 +82,20 @@ func (s *BackupService) DecorateTasks(tasks []domain.BackupTask) []domain.Backup
 		}
 	}
 	return tasks
+}
+
+// scheduleJudgement 判断任务的计划能否用于未执行判定。
+func scheduleJudgement(task domain.BackupTask) (parsed, disabled bool) {
+	if IsValidCron(task.ScheduleCron) {
+		return true, false
+	}
+	if cron := CronFromHuman(task.Schedule); IsValidCron(cron) {
+		return true, false
+	}
+	if strings.TrimSpace(task.Schedule) == "" || disabledSchedule(task.Schedule) {
+		return false, true
+	}
+	return false, false
 }
 
 // BuildDashboard 汇总概览数据。

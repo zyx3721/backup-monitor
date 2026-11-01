@@ -19,6 +19,7 @@ import {
   HostNameLink,
   MethodTag,
   PageHeader,
+  Tag,
   TaskNameLink,
   TaskStatusTag,
   formatTime,
@@ -213,7 +214,14 @@ export function TasksPage() {
                   <td className="px-4 py-3">
                     <MethodTag method={task.type} />
                   </td>
-                  <td className="px-4 py-3 text-sm text-[var(--bm-text)]">{taskSchedule(task)}</td>
+                  <td className="px-4 py-3 text-sm text-[var(--bm-text)]">
+                    <span className="inline-flex items-center gap-1.5">
+                      {taskSchedule(task)}
+                      {!task.scheduleParsed && !task.scheduleDisabled ? (
+                        <Tag tone="warning">计划未识别</Tag>
+                      ) : null}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-sm text-[var(--bm-text)]">
                     {task.lastSuccessTime ? formatTime(task.lastSuccessTime) : '-'}
                   </td>

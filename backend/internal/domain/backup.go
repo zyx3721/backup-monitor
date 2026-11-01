@@ -81,6 +81,8 @@ type BackupTask struct {
 	Schedule            string         `json:"schedule"`
 	ScheduleCron        string         `json:"scheduleCron,omitempty"`
 	ScheduleLocked      bool           `json:"scheduleLocked"`
+	ScheduleParsed      bool           `json:"scheduleParsed"`
+	ScheduleDisabled    bool           `json:"scheduleDisabled"`
 	Status              string         `json:"status"`
 	LastExecutionTime   string         `json:"lastExecutionTime,omitempty"`
 	LastSuccessTime     string         `json:"lastSuccessTime,omitempty"`

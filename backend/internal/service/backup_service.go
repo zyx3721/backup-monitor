@@ -661,22 +661,32 @@ func upsertTasks(tx *sql.Tx, hostID, hostname string, tasks []domain.IngestTask)
 			if conflict > 0 {
 				nextName = existing.Name
 			}
-			if _, err := tx.Exec(`UPDATE tasks SET name=?, task_key=COALESCE(NULLIF(?,''),task_key), type=?, tool=COALESCE(NULLIF(?,''),tool),
-				schedule=COALESCE(NULLIF(?,''),schedule), schedule_cron=COALESCE(NULLIF(?,''),schedule_cron), config=? WHERE id=?`,
-				nextName, key, effectiveType, input.Tool, schedule, input.ScheduleCron, configJSON, existing.ID); err != nil {
-				return nil, err
-			}
-			if scheduleDisabled && schedule == "" {
-				if _, err := tx.Exec(`UPDATE tasks SET schedule='' WHERE id=?`, existing.ID); err != nil {
+			if existing.ScheduleLocked {
+				if _, err := tx.Exec(`UPDATE tasks SET name=?, task_key=COALESCE(NULLIF(?,''),task_key), type=?,
+					tool=COALESCE(NULLIF(?,''),tool), config=? WHERE id=?`,
+					nextName, key, effectiveType, input.Tool, configJSON, existing.ID); err != nil {
 					return nil, err
+				}
+			} else {
+				if _, err := tx.Exec(`UPDATE tasks SET name=?, task_key=COALESCE(NULLIF(?,''),task_key), type=?, tool=COALESCE(NULLIF(?,''),tool),
+					schedule=COALESCE(NULLIF(?,''),schedule), schedule_cron=COALESCE(NULLIF(?,''),schedule_cron), config=? WHERE id=?`,
+					nextName, key, effectiveType, input.Tool, schedule, input.ScheduleCron, configJSON, existing.ID); err != nil {
+					return nil, err
+				}
+				if scheduleDisabled && schedule == "" {
+					if _, err := tx.Exec(`UPDATE tasks SET schedule='' WHERE id=?`, existing.ID); err != nil {
+						return nil, err
+					}
 				}
 			}
 			existing.Name = nextName
 			existing.TaskKey = key
 			existing.Type = effectiveType
 			existing.Tool = input.Tool
-			existing.Schedule = schedule
-			existing.ScheduleCron = input.ScheduleCron
+			if !existing.ScheduleLocked {
+				existing.Schedule = schedule
+				existing.ScheduleCron = input.ScheduleCron
+			}
 			existing.Config = config
 			taskMap[name] = existing
 			continue

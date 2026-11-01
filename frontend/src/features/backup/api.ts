@@ -39,11 +39,15 @@ export const fetchTaskExecutions = (id: string) =>
   api<BackupExecution[]>(`/api/backup/tasks/${id}/executions`);
 export const deleteTask = (id: string) =>
   api<{ ok: boolean }>(`/api/backup/tasks/${id}`, { method: 'DELETE' });
-export const updateTaskSchedule = (id: string, scheduleCron: string) =>
-  api<{ ok: boolean; delivery: { delivered: boolean; ok: boolean; message: string } }>(
-    `/api/backup/tasks/${id}/schedule`,
-    { method: 'PUT', body: JSON.stringify({ scheduleCron }) }
-  );
+export const updateTaskSchedule = (id: string, scheduleCron: string, serverOnly = false) =>
+  api<{
+    ok: boolean;
+    serverOnly?: boolean;
+    delivery: { delivered: boolean; ok: boolean; message: string };
+  }>(`/api/backup/tasks/${id}/schedule`, {
+    method: 'PUT',
+    body: JSON.stringify({ scheduleCron, serverOnly }),
+  });
 
 export const fetchExecutions = () => api<BackupExecution[]>('/api/backup/executions');
 export const deleteExecution = (id: string) =>

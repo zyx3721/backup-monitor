@@ -40,6 +40,7 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
   const canManage = userHasPermission(getStoredUser(), 'backup.tasks.manage');
   const [cron, setCron] = useState('');
   const [editing, setEditing] = useState(false);
+  const [serverOnly, setServerOnly] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<BackupExecution | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -102,6 +103,7 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
   useEffect(() => {
     if (!task || editing) return;
     setCron(task.scheduleCron ?? '');
+    setServerOnly(scheduleEditServerOnly(task));
   }, [task, editing]);
 
   useEffect(() => {
@@ -110,13 +112,17 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
   }, [taskID]);
 
   const saveSchedule = useMutation({
-    mutationFn: () => updateTaskSchedule(taskID, cron),
+    mutationFn: () => updateTaskSchedule(taskID, cron, serverOnly),
     onSuccess: result => {
-      if (result.delivery?.delivered === false) {
+      if (result.delivery?.ok === false) {
         toast.error(result.delivery.message || '执行计划下发失败');
         return;
       }
-      toast.success(`${task?.name ?? '任务'} 执行计划已更新`);
+      toast.success(
+        result.serverOnly
+          ? `${task?.name ?? '任务'} 已保存为服务端判定计划`
+          : `${task?.name ?? '任务'} 执行计划已更新`
+      );
       setEditing(false);
       void queryClient.invalidateQueries({ queryKey: ['backup'] });
     },
@@ -200,6 +206,7 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
                           className="bm-edit-outline-button inline-grid h-7 w-7 place-items-center rounded-md border transition"
                           onClick={() => {
                             setCron(task.scheduleCron ?? '');
+                            setServerOnly(scheduleEditServerOnly(task));
                             setEditing(true);
                           }}
                         >
@@ -210,8 +217,39 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
                   }
                 />
               ) : (
-                <Info label="执行计划" value={taskSchedule(task)} />
+                <Info
+                  label="执行计划"
+                  value={
+                    <span className="flex flex-wrap items-center gap-2">
+                      {taskSchedule(task)}
+                      {canManage ? (
+                        <button
+                          type="button"
+                          aria-label="修改执行计划"
+                          className="bm-edit-outline-button inline-grid h-7 w-7 place-items-center rounded-md border transition"
+                          onClick={() => {
+                            setCron(task.scheduleCron ?? '');
+                            setServerOnly(scheduleEditServerOnly(task));
+                            setEditing(true);
+                          }}
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      ) : null}
+                    </span>
+                  }
+                />
               )}
+              {!task.scheduleParsed && !task.scheduleDisabled ? (
+                <Info
+                  label="计划判定"
+                  value={
+                    <span className="text-amber-500">
+                      计划文本无法解析为 cron，未执行判定不会生效；可点击铅笔补录
+                    </span>
+                  }
+                />
+              ) : null}
               {task.type === 'veeam' ? <Info label="保留策略" value={retention} /> : null}
             </div>
           </section>
@@ -372,9 +410,27 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
             </div>
             <div className="grid gap-2 border-t border-[var(--bm-border)] pt-4 sm:grid-cols-[64px_minmax(0,1fr)] sm:gap-3">
               <div className="text-sm text-[var(--bm-text-muted)] sm:text-right">下发</div>
-              <p className="text-sm leading-6 text-[var(--bm-text-muted)]">
-                保存后将同步下发至 Agent，直接修改服务器 crontab 中该任务（key 标签定位）的执行计划
-              </p>
+              <div className="space-y-2">
+                <label className="flex items-start gap-2 text-sm text-[var(--bm-text)]">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-[var(--bm-text)]"
+                    checked={serverOnly}
+                    onChange={event => setServerOnly(event.target.checked)}
+                  />
+                  <span>
+                    仅服务端判定（不下发 Agent）
+                    <span className="mt-1 block text-xs leading-5 text-[var(--bm-text-muted)]">
+                      适用于无法由 Agent 改写计划的任务；保存后该 cron 只用于「未执行」判定，后续上报不会覆盖
+                    </span>
+                  </span>
+                </label>
+                {!serverOnly ? (
+                  <p className="text-sm leading-6 text-[var(--bm-text-muted)]">
+                    保存后将同步下发至 Agent，直接修改服务器 crontab 中该任务（key 标签定位）的执行计划
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:space-x-0">
@@ -385,14 +441,14 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
               className="bm-primary-soft-button"
               disabled={saveSchedule.isPending || !cron.trim()}
               onClick={() => {
-                if (cron.trim() === (task?.scheduleCron ?? '').trim()) {
+                if (!serverOnly && cron.trim() === (task?.scheduleCron ?? '').trim()) {
                   toast.info('当前执行计划未变化');
                   return;
                 }
                 saveSchedule.mutate();
               }}
             >
-              {saveSchedule.isPending ? '下发中' : '保存并下发'}
+              {saveSchedule.isPending ? '保存中' : serverOnly ? '保存（仅服务端）' : '保存并下发'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -418,6 +474,11 @@ export function TaskDetailPage({ taskID }: { taskID: string }) {
       />
     </div>
   );
+}
+
+// scheduleEditServerOnly 非 shell 任务或计划无法解析时，默认只保存服务端判定计划。
+function scheduleEditServerOnly(task: BackupTask) {
+  return !task.scheduleParsed || task.type !== 'shell';
 }
 
 function Info({ label, value }: { label: string; value: ReactNode }) {

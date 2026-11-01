@@ -2060,7 +2060,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回（权限 backup.tasks.manage）",
+                "description": "修改 cron 计划并下发 Agent，仅主机心跳在线时成功；计划未变化时直接返回；serverOnly 为 true 时只写服务端判定计划（权限 backup.tasks.manage）",
                 "consumes": [
                     "application/json"
                 ],
@@ -2080,7 +2080,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "新的 cron 表达式",
+                        "description": "新的 cron 表达式；serverOnly 为 true 时只写服务端判定计划、不下发 Agent",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -4954,6 +4954,9 @@ const docTemplate = `{
             "properties": {
                 "scheduleCron": {
                     "type": "string"
+                },
+                "serverOnly": {
+                    "type": "boolean"
                 }
             }
         },

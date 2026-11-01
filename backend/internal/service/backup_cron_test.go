@@ -53,9 +53,18 @@ func TestCronValidation(t *testing.T) {
 
 func TestCronFromHuman(t *testing.T) {
 	cases := map[string]string{
-		"每天 23:30":  "30 23 * * *",
-		"每周一 02:00": "0 2 * * 1",
-		"每小时":       "0 * * * *",
+		"每天 23:30":                    "30 23 * * *",
+		"每日 03:30":                    "30 3 * * *",
+		"每周一 02:00":                   "0 2 * * 1",
+		"每小时":                         "0 * * * *",
+		"每月 15 日 06:00":               "0 6 15 * *",
+		"每月 1 日":                      "0 0 1 * *",
+		"Daily at: 06:00":             "0 6 * * *",
+		"Weekly: Saturday at 03:30":   "30 3 * * 6",
+		"Every month day 15 at 02:00": "0 2 15 * *",
+		"Hourly":                      "0 * * * *",
+		"开机时":                         "",
+		"未启用":                         "",
 	}
 	for input, want := range cases {
 		if got := CronFromHuman(input); got != want {

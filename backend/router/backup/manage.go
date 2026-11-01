@@ -213,6 +213,7 @@ func (a *Router) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 func (a *Router) handleTaskSchedule(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ScheduleCron string `json:"scheduleCron"`
+		ServerOnly   bool   `json:"serverOnly"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		common.WriteError(w, http.StatusBadRequest, "请求体格式无效")
@@ -229,27 +230,34 @@ func (a *Router) handleTaskSchedule(w http.ResponseWriter, r *http.Request) {
 		common.WriteError(w, http.StatusNotFound, "任务不存在")
 		return
 	}
-	if strings.TrimSpace(task.TaskKey) == "" {
-		common.WriteError(w, http.StatusBadRequest, "该任务缺少 key 标签，无法下发修改执行计划")
-		return
+	delivered, ok, message := false, true, "已保存为服务端判定计划，未下发 Agent"
+	if !body.ServerOnly {
+		if strings.TrimSpace(task.TaskKey) == "" {
+			common.WriteError(w, http.StatusBadRequest, "该任务缺少 key 标签，无法下发修改执行计划")
+			return
+		}
+		if cron == strings.TrimSpace(task.ScheduleCron) {
+			common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "delivery": map[string]any{"delivered": true, "ok": true, "message": "计划未变化"}})
+			return
+		}
+		delivered, ok, message = a.hub.SendSetCron(task.HostID, task.TaskKey, cron)
+		if !delivered || !ok {
+			common.WriteError(w, http.StatusBadRequest, "执行计划修改失败："+message)
+			return
+		}
 	}
-	if cron == strings.TrimSpace(task.ScheduleCron) {
-		common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "delivery": map[string]any{"delivered": true, "ok": true, "message": "计划未变化"}})
-		return
-	}
-	delivered, ok, message := a.hub.SendSetCron(task.HostID, task.TaskKey, cron)
-	if !delivered || !ok {
-		common.WriteError(w, http.StatusBadRequest, "执行计划修改失败："+message)
-		return
-	}
-	if err := a.svc.Repo().UpdateTaskSchedule(id, cron); err != nil {
+	if err := a.svc.Repo().UpdateTaskSchedule(id, cron, body.ServerOnly); err != nil {
 		common.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	a.svc.RecomputeTaskStatus(id, time.Now())
 	detail := fmt.Sprintf("主机 %s 的任务 %s 执行计划已更新", task.HostName, task.Name)
+	if body.ServerOnly {
+		detail = fmt.Sprintf("主机 %s 的任务 %s 执行计划已更新（仅服务端判定，未下发 Agent）", task.HostName, task.Name)
+	}
 	a.recordAudit(r, service.AuditModuleTasks, "更新执行计划", task.Name, detail, service.AuditResultSuccess)
-	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "delivery": map[string]any{"delivered": delivered, "ok": ok, "message": message}})
+	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "serverOnly": body.ServerOnly,
+		"delivery": map[string]any{"delivered": delivered, "ok": ok, "message": message}})
 }
 
 func (a *Router) handleExecutions(w http.ResponseWriter, r *http.Request) {

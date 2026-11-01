@@ -186,6 +186,7 @@ type swaggerHostRoleRequest struct {
 // swaggerTaskScheduleRequest 修改执行计划请求。
 type swaggerTaskScheduleRequest struct {
 	ScheduleCron string `json:"scheduleCron"`
+	ServerOnly   bool   `json:"serverOnly"`
 }
 
 // swaggerAgentProfileRequest 创建或更新采集配置请求。

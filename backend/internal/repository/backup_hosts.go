@@ -195,9 +195,13 @@ func (r *BackupRepository) DeleteTask(id string) (bool, error) {
 	return affected > 0, nil
 }
 
-// UpdateTaskSchedule 保存任务的 cron 计划。
-func (r *BackupRepository) UpdateTaskSchedule(id, cron string) error {
-	_, err := r.db.Exec(`UPDATE tasks SET schedule_cron=?, schedule='', schedule_locked=0 WHERE id=?`, cron, id)
+// UpdateTaskSchedule 保存任务的 cron 计划，locked 表示仅服务端判定使用、不再被上报覆盖。
+func (r *BackupRepository) UpdateTaskSchedule(id, cron string, locked bool) error {
+	flag := 0
+	if locked {
+		flag = 1
+	}
+	_, err := r.db.Exec(`UPDATE tasks SET schedule_cron=?, schedule='', schedule_locked=? WHERE id=?`, cron, flag, id)
 	return err
 }
 
