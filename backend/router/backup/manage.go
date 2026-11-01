@@ -339,7 +339,7 @@ func (a *Router) handleClearExecutions(w http.ResponseWriter, r *http.Request) {
 		common.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	a.recordAudit(r, service.AuditModuleExecutions, "清空执行记录", "执行记录",
+	a.recordAudit(r, service.AuditModuleExecutions, "清空执行记录", fmt.Sprintf("%d 条", deleted),
 		fmt.Sprintf("已清空 %d 条执行记录", deleted), service.AuditResultSuccess)
 	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "deleted": deleted})
 }
@@ -409,7 +409,7 @@ func (a *Router) handleClearAlerts(w http.ResponseWriter, r *http.Request) {
 		common.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	a.recordAudit(r, service.AuditModuleAlerts, "清空告警记录", "告警记录",
+	a.recordAudit(r, service.AuditModuleAlerts, "清空告警记录", fmt.Sprintf("%d 条", deleted),
 		fmt.Sprintf("已清空 %d 条告警记录", deleted), service.AuditResultSuccess)
 	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "deleted": deleted})
 }

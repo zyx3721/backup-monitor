@@ -306,7 +306,7 @@ export function AuditPage() {
         open={clearOpen}
         title="清空日志记录"
         description="清空后不可恢复"
-        detail="确定清空当前审计日志记录吗？"
+        detail={`确定清空当前筛选后的 ${items.length} 条审计日志吗？`}
         confirmText="确认清空"
         horizontalHeader
         softDestructive
