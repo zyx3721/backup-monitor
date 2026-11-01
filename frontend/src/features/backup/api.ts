@@ -58,12 +58,22 @@ export const unlockTaskSchedule = (id: string) =>
 export const fetchExecutions = () => api<BackupExecution[]>('/api/backup/executions');
 export const deleteExecution = (id: string) =>
   api<{ ok: boolean }>(`/api/backup/executions/${id}`, { method: 'DELETE' });
+export const clearExecutions = (ids: string[]) =>
+  api<{ ok: boolean; deleted: number }>('/api/backup/executions/clear', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  });
 
 export const fetchAlerts = () => api<Alert[]>('/api/backup/alerts');
 export const resolveAlert = (id: string) =>
   api<{ ok: boolean }>(`/api/backup/alerts/${id}/resolve`, { method: 'POST' });
 export const deleteAlert = (id: string) =>
   api<{ ok: boolean }>(`/api/backup/alerts/${id}`, { method: 'DELETE' });
+export const clearAlerts = (ids: string[]) =>
+  api<{ ok: boolean; deleted: number }>('/api/backup/alerts/clear', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  });
 
 export const fetchChannels = () => api<NotifyChannel[]>('/api/backup/notify/channels');
 export const createChannel = (body: Partial<NotifyChannel>) =>

@@ -86,6 +86,46 @@ func (r *BackupRepository) DeleteExecution(id string) (bool, error) {
 	return affected > 0, nil
 }
 
+// ClearExecutions 按 ID 批量删除执行记录，返回删除数量。
+func (r *BackupRepository) ClearExecutions(ids []string) (int, error) {
+	return r.deleteRecordsByIDs("executions", ids)
+}
+
+// ClearAlerts 按 ID 批量删除告警记录，返回删除数量。
+func (r *BackupRepository) ClearAlerts(ids []string) (int, error) {
+	return r.deleteRecordsByIDs("alerts", ids)
+}
+
+func (r *BackupRepository) deleteRecordsByIDs(table string, ids []string) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	statement, err := tx.Prepare(`DELETE FROM ` + table + ` WHERE id=?`)
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, err
+	}
+	defer statement.Close()
+	deleted := 0
+	for _, id := range ids {
+		res, err := statement.Exec(id)
+		if err != nil {
+			_ = tx.Rollback()
+			return 0, err
+		}
+		affected, _ := res.RowsAffected()
+		deleted += int(affected)
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return deleted, nil
+}
+
 // LatestExecution 返回任务最近一次执行。
 func (r *BackupRepository) LatestExecution(taskID string) (*domain.BackupExecution, error) {
 	row := r.db.QueryRow(`SELECT id,task_id,'','','','',COALESCE(session_id,''),COALESCE(job_id,''),COALESCE(oib_id,''),state,

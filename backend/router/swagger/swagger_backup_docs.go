@@ -157,6 +157,19 @@ func swaggerBackupExecutionDetail() {}
 // @Router /api/backup/executions/{id} [delete]
 func swaggerBackupExecutionDelete() {}
 
+// swaggerBackupExecutionsClear documents POST /api/backup/executions/clear.
+// @Summary 清空执行记录
+// @Tags 执行记录
+// @Accept json
+// @Produce json
+// @Param request body swaggerIDsRequest true "要清空的执行记录 ID 列表"
+// @Success 200 {object} swaggerGenericObject
+// @Failure 400 {object} swaggerErrorResponse
+// @Description 按 ID 批量删除执行记录并写入审计，返回删除数量（权限 backup.executions.manage）
+// @Security BearerAuth
+// @Router /api/backup/executions/clear [post]
+func swaggerBackupExecutionsClear() {}
+
 // swaggerBackupAlerts documents GET /api/backup/alerts.
 // @Summary 获取告警事件列表
 // @Tags 告警中心
@@ -190,6 +203,19 @@ func swaggerBackupAlertResolve() {}
 // @Security BearerAuth
 // @Router /api/backup/alerts/{id} [delete]
 func swaggerBackupAlertDelete() {}
+
+// swaggerBackupAlertsClear documents POST /api/backup/alerts/clear.
+// @Summary 清空告警记录
+// @Tags 告警中心
+// @Accept json
+// @Produce json
+// @Param request body swaggerIDsRequest true "要清空的告警 ID 列表"
+// @Success 200 {object} swaggerGenericObject
+// @Failure 400 {object} swaggerErrorResponse
+// @Description 按 ID 批量删除告警记录并写入审计，返回删除数量（权限 backup.alerts.manage）
+// @Security BearerAuth
+// @Router /api/backup/alerts/clear [post]
+func swaggerBackupAlertsClear() {}
 
 // swaggerBackupDashboard documents GET /api/backup/dashboard.
 // @Summary 获取概览统计

@@ -79,8 +79,8 @@ Default thresholds (editable in **System Settings → Basic → Thresholds & ret
 - **Overview**: hosts/tasks/today's runs/success rate/abnormal tasks/open alerts, 14-day trend, status distribution.
 - **Hosts**: search, state and platform filters, host detail, role maintenance, cascade delete.
 - **Tasks**: filter by host/method/state, execution history, profile inspection, edit cron online with agent receipt.
-- **Executions**: full details, duration, sizes, artifact path and error message.
-- **Alerts**: filter by state/type/severity, resolve and export.
+- **Executions**: full details, duration, sizes, artifact path and error message; delete, clear and export.
+- **Alerts**: filter by state/type/severity, resolve, delete, clear and export.
 - **Notifications**: channel maintenance, event subscriptions, severity filters, enable/recovery, delivery records.
 - **Agent management**: collection profiles, agent tokens, Linux/Windows binaries and self-update push.
 - **System settings**: branding, session/retention thresholds, users/roles/groups, LDAP and WeCom auth, password-reset mail.
@@ -485,7 +485,7 @@ Same as Docker: console `http://your-domain.com` (`admin / admin123`), API docs 
 
 - Swagger UI: `http://<server>/swagger/index.html`
 - OpenAPI JSON: `http://<server>/swagger/doc.json`
-- **89 endpoints** grouped as: system settings, authentication, agent management, notifications, agent channel, backup tasks, backup hosts, alert center, audit log, executions, health, overview
+- **91 endpoints** grouped as: system settings, authentication, agent management, notifications, agent channel, backup tasks, backup hosts, alert center, audit log, executions, health, overview
 - Full endpoint list (parameters, permissions, examples) in [docs/manual.md](docs/manual.md) chapter 5
 
 ## Database

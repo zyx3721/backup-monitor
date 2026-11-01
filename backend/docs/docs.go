@@ -1010,6 +1010,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/backup/alerts/clear": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 批量删除告警记录并写入审计，返回删除数量（权限 backup.alerts.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "告警中心"
+                ],
+                "summary": "清空告警记录",
+                "parameters": [
+                    {
+                        "description": "要清空的告警 ID 列表",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerIDsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/backup/alerts/{id}": {
             "delete": {
                 "security": [
@@ -1146,6 +1191,51 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/swagger.swaggerExecution"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/backup/executions/clear": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 批量删除执行记录并写入审计，返回删除数量（权限 backup.executions.manage）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "执行记录"
+                ],
+                "summary": "清空执行记录",
+                "parameters": [
+                    {
+                        "description": "要清空的执行记录 ID 列表",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerIDsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerGenericObject"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.swaggerErrorResponse"
                         }
                     }
                 }
@@ -4162,6 +4252,17 @@ const docTemplate = `{
             "properties": {
                 "role": {
                     "type": "string"
+                }
+            }
+        },
+        "swagger.swaggerIDsRequest": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

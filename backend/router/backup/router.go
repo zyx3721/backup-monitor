@@ -72,10 +72,12 @@ func (a *Router) Register(r chi.Router, requirePermission func(string) func(http
 	r.With(requirePermission(permExecutionsRead)).Get("/api/backup/executions", a.handleExecutions)
 	r.With(requirePermission(permExecutionsRead)).Get("/api/backup/executions/{id}", a.handleExecution)
 	r.With(requirePermission(permExecutionsMng)).Delete("/api/backup/executions/{id}", a.handleDeleteExecution)
+	r.With(requirePermission(permExecutionsMng)).Post("/api/backup/executions/clear", a.handleClearExecutions)
 
 	r.With(requirePermission(permAlertsRead)).Get("/api/backup/alerts", a.handleAlerts)
 	r.With(requirePermission(permAlertsManage)).Post("/api/backup/alerts/{id}/resolve", a.handleResolveAlert)
 	r.With(requirePermission(permAlertsManage)).Delete("/api/backup/alerts/{id}", a.handleDeleteAlert)
+	r.With(requirePermission(permAlertsManage)).Post("/api/backup/alerts/clear", a.handleClearAlerts)
 
 	r.With(requirePermission(permNotifyRead)).Get("/api/backup/notify/channels", a.handleChannels)
 	r.With(requirePermission(permNotifyManage)).Post("/api/backup/notify/channels", a.handleCreateChannel)

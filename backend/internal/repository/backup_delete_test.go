@@ -45,6 +45,36 @@ func TestDeleteTaskCascadesExecutionsAndAlerts(t *testing.T) {
 	assertCount(t, db, `SELECT COUNT(*) FROM hosts WHERE id='h-delete'`, 1)
 }
 
+func TestClearExecutionsAndAlertsByIDs(t *testing.T) {
+	db := newSchemaDB(t)
+	repo := repository.NewBackupRepository(db)
+
+	seedDeleteFixture(t, db)
+	if _, err := db.Exec(`INSERT INTO executions (id,task_id,state,creation_time) VALUES ('e-keep','t-delete','success','2026-01-02T00:00:00Z')`); err != nil {
+		t.Fatalf("seed kept execution: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO alerts (id,host_id,task_id,host_name,type,level,created_at) VALUES ('a-keep','h-delete','t-delete','host-delete','not_run','warning','2026-01-02T00:00:00Z')`); err != nil {
+		t.Fatalf("seed kept alert: %v", err)
+	}
+
+	if deleted, err := repo.ClearExecutions(nil); err != nil || deleted != 0 {
+		t.Fatalf("clear empty executions = %d, err = %v", deleted, err)
+	}
+	deleted, err := repo.ClearExecutions([]string{"e-delete"})
+	if err != nil || deleted != 1 {
+		t.Fatalf("clear executions = %d, err = %v", deleted, err)
+	}
+	assertCount(t, db, `SELECT COUNT(*) FROM executions WHERE id='e-delete'`, 0)
+	assertCount(t, db, `SELECT COUNT(*) FROM executions WHERE id='e-keep'`, 1)
+
+	deleted, err = repo.ClearAlerts([]string{"a-delete"})
+	if err != nil || deleted != 1 {
+		t.Fatalf("clear alerts = %d, err = %v", deleted, err)
+	}
+	assertCount(t, db, `SELECT COUNT(*) FROM alerts WHERE id='a-delete'`, 0)
+	assertCount(t, db, `SELECT COUNT(*) FROM alerts WHERE id='a-keep'`, 1)
+}
+
 func seedDeleteFixture(t *testing.T, db *sql.DB) {
 	t.Helper()
 	statements := []string{

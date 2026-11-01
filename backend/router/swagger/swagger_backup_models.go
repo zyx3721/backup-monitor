@@ -183,6 +183,11 @@ type swaggerHostRoleRequest struct {
 	Role string `json:"role"`
 }
 
+// swaggerIDsRequest 按 ID 批量操作请求。
+type swaggerIDsRequest struct {
+	IDs []string `json:"ids"`
+}
+
 // swaggerTaskScheduleRequest 修改执行计划请求。
 type swaggerTaskScheduleRequest struct {
 	ScheduleCron string `json:"scheduleCron"`

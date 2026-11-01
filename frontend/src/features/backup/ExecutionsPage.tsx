@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { userHasPermission } from '@/lib/permissions';
 import { getStoredUser } from '@/lib/session';
 import { showErrorToast } from '@/lib/toast-errors';
-import { deleteExecution, fetchExecutions } from './api';
+import { clearExecutions, deleteExecution, fetchExecutions } from './api';
 import { ExecutionDetailDialog } from './ExecutionDetailDialog';
 import { ExportDialog } from './ExportDialog';
 import { executionExportColumns } from './export-columns';
@@ -40,6 +40,7 @@ export function ExecutionsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(18);
   const [exportOpen, setExportOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const { data = [] } = useQuery({
     queryKey: ['backup', 'executions'],
     queryFn: () => fetchExecutions(),
@@ -89,6 +90,24 @@ export function ExecutionsPage() {
     },
     onError: error => showErrorToast(error, '删除执行记录失败'),
   });
+
+  const clear = useMutation({
+    mutationFn: () => clearExecutions(filtered.map(item => item.id)),
+    onSuccess: response => {
+      setClearOpen(false);
+      toast.success(`已清空 ${response.deleted} 条执行记录`);
+      void queryClient.invalidateQueries({ queryKey: ['backup'] });
+    },
+    onError: error => showErrorToast(error, '清空执行记录失败'),
+  });
+
+  function openClear() {
+    if (filtered.length === 0) {
+      toast.error('没有可清空的执行记录');
+      return;
+    }
+    setClearOpen(true);
+  }
 
   return (
     <div className="bm-page-fill">
@@ -157,6 +176,17 @@ export function ExecutionsPage() {
               >
                 <Download size={16} />
                 导出
+              </Button>
+            ) : null}
+            {canManage ? (
+              <Button
+                variant="outline"
+                className="bm-danger-soft-button shrink-0"
+                onClick={openClear}
+                disabled={clear.isPending}
+              >
+                <Trash2 size={16} />
+                清空
               </Button>
             ) : null}
             <span className="ml-auto text-xs text-[var(--bm-text-muted)]">
@@ -274,6 +304,19 @@ export function ExecutionsPage() {
         auditModule="executions"
       />
       <ExecutionDetailDialog execution={detail} onOpenChange={open => !open && setDetail(null)} />
+
+      <ConfirmDialog
+        open={clearOpen}
+        title="清空执行记录"
+        description="清空后不可恢复"
+        detail={`确定清空当前筛选后的 ${filtered.length} 条执行记录吗？`}
+        confirmText="确认清空"
+        icon="delete"
+        horizontalHeader
+        busy={clear.isPending}
+        onOpenChange={open => !open && setClearOpen(false)}
+        onConfirm={() => clear.mutate()}
+      />
 
       <ConfirmDialog
         open={Boolean(deleting)}

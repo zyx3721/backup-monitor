@@ -323,6 +323,27 @@ func (a *Router) handleDeleteExecution(w http.ResponseWriter, r *http.Request) {
 	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
+func (a *Router) handleClearExecutions(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		IDs []string `json:"ids"`
+	}
+	if !common.DecodeJSON(w, r, &body) {
+		return
+	}
+	if len(body.IDs) == 0 {
+		common.WriteError(w, http.StatusBadRequest, "没有可清空的执行记录")
+		return
+	}
+	deleted, err := a.svc.Repo().ClearExecutions(body.IDs)
+	if err != nil {
+		common.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	a.recordAudit(r, service.AuditModuleExecutions, "清空执行记录", "执行记录",
+		fmt.Sprintf("已清空 %d 条执行记录", deleted), service.AuditResultSuccess)
+	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "deleted": deleted})
+}
+
 func (a *Router) handleAlerts(w http.ResponseWriter, r *http.Request) {
 	alerts, err := a.svc.Repo().ListAlerts()
 	if err != nil {
@@ -370,6 +391,27 @@ func (a *Router) handleDeleteAlert(w http.ResponseWriter, r *http.Request) {
 	}
 	a.recordAudit(r, service.AuditModuleAlerts, "删除告警", name, alertAuditDetail(alert, "已删除"), service.AuditResultSuccess)
 	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (a *Router) handleClearAlerts(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		IDs []string `json:"ids"`
+	}
+	if !common.DecodeJSON(w, r, &body) {
+		return
+	}
+	if len(body.IDs) == 0 {
+		common.WriteError(w, http.StatusBadRequest, "没有可清空的告警记录")
+		return
+	}
+	deleted, err := a.svc.Repo().ClearAlerts(body.IDs)
+	if err != nil {
+		common.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	a.recordAudit(r, service.AuditModuleAlerts, "清空告警记录", "告警记录",
+		fmt.Sprintf("已清空 %d 条告警记录", deleted), service.AuditResultSuccess)
+	common.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "deleted": deleted})
 }
 
 func firstNonEmpty(values ...string) string {

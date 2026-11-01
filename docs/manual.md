@@ -1018,8 +1018,8 @@ server {
 - **概览**：`backup.dashboard.read`（查看概览）
 - **备份主机**：`backup.hosts.read`（查看主机）、`backup.hosts.manage`（修改主机角色、删除与导出主机，隐含 `backup.hosts.read`）
 - **备份任务**：`backup.tasks.read`（查看任务）、`backup.tasks.manage`（修改执行计划、删除与导出任务，隐含 `backup.tasks.read`）
-- **执行记录**：`backup.executions.read`（查看执行记录）、`backup.executions.manage`（删除与导出执行记录，隐含 `backup.executions.read`）
-- **告警中心**：`backup.alerts.read`（查看告警事件）、`backup.alerts.manage`（恢复、删除与导出告警事件，隐含 `backup.alerts.read`）
+- **执行记录**：`backup.executions.read`（查看执行记录）、`backup.executions.manage`（删除、清空与导出执行记录，隐含 `backup.executions.read`）
+- **告警中心**：`backup.alerts.read`（查看告警事件）、`backup.alerts.manage`（恢复、删除、清空与导出告警事件，隐含 `backup.alerts.read`）
 - **通知管理**：`backup.notifications.read`（查看通知渠道与订阅配置）、`backup.notifications.manage`（维护并测试通知渠道，隐含 `.read`）
 - **Agent 管理**：`backup.agents.read`（查看采集配置、Agent 令牌与二进制）、`backup.agents.manage`（维护采集配置、令牌并推送更新，隐含 `.read`）
 - **审计日志**：`audit.read`（查看审计日志）、`audit.manage`（导出与清空审计日志，隐含 `audit.read`）
@@ -1138,12 +1138,14 @@ server {
 - `GET /api/backup/executions` - 获取执行记录列表：返回全部执行记录及其任务、主机与结果（权限 `.read`）
 - `GET /api/backup/executions/{id}` - 获取执行记录详情（权限 `.read`）
 - `DELETE /api/backup/executions/{id}` - 删除执行记录：审计详情含主机、任务与执行时间（权限 `.manage`）
+- `POST /api/backup/executions/clear` - 批量清空执行记录：请求体 `{"ids":[...]}`，返回 `deleted` 数量并写入审计（权限 `.manage`）
 
 **告警中心**（权限 `backup.alerts`）
 
 - `GET /api/backup/alerts` - 获取告警事件列表：返回全部告警及其状态、级别与关联任务（权限 `.read`）
 - `POST /api/backup/alerts/{id}/resolve` - 恢复告警：手动恢复指定告警并写入审计（权限 `.manage`）
 - `DELETE /api/backup/alerts/{id}` - 删除告警：删除指定告警并写入审计（权限 `.manage`）
+- `POST /api/backup/alerts/clear` - 批量清空告警：请求体 `{"ids":[...]}`，返回 `deleted` 数量并写入审计（权限 `.manage`）
 
 **通知管理**（权限 `backup.notifications`）
 
@@ -1482,7 +1484,9 @@ Agent 通道（认证头 `X-Agent-Token`，完整清单见 [5.2.6](#526-agent-�
 | GET | `/api/backup/tasks`、`/api/backup/tasks/{id}/executions` | 任务与执行历史 |
 | PUT | `/api/backup/tasks/{id}/schedule` | 修改 cron 计划并下发 Agent |
 | GET | `/api/backup/executions`、`/api/backup/executions/{id}` | 执行记录 |
+| POST | `/api/backup/executions/clear` | 批量清空执行记录 |
 | GET | `/api/backup/alerts`、`POST /api/backup/alerts/{id}/resolve` | 告警查询与恢复 |
+| POST | `/api/backup/alerts/clear` | 批量清空告警 |
 | GET/POST/PUT/DELETE | `/api/backup/notify/channels` | 通知渠道维护 |
 | GET | `/api/backup/notifications?limit=&channel=` | 通知发送记录（默认 100 条，最多 500 条；channel 可选） |
 | GET/PUT | `/api/backup/settings` | 备份参数（判定阈值与保留策略，权限 `settings.base.read` / `settings.base.manage`） |

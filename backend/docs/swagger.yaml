@@ -446,6 +446,13 @@ definitions:
       role:
         type: string
     type: object
+  swagger.swaggerIDsRequest:
+    properties:
+      ids:
+        items:
+          type: string
+        type: array
+    type: object
   swagger.swaggerMessageResponse:
     properties:
       message:
@@ -1886,6 +1893,34 @@ paths:
       summary: 恢复告警
       tags:
       - 告警中心
+  /api/backup/alerts/clear:
+    post:
+      consumes:
+      - application/json
+      description: 按 ID 批量删除告警记录并写入审计，返回删除数量（权限 backup.alerts.manage）
+      parameters:
+      - description: 要清空的告警 ID 列表
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerIDsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 清空告警记录
+      tags:
+      - 告警中心
   /api/backup/dashboard:
     get:
       description: 返回主机、任务、今日执行与告警的汇总、状态分布与每日趋势（权限 backup.dashboard.read）
@@ -1970,6 +2005,34 @@ paths:
       security:
       - BearerAuth: []
       summary: 获取执行记录详情
+      tags:
+      - 执行记录
+  /api/backup/executions/clear:
+    post:
+      consumes:
+      - application/json
+      description: 按 ID 批量删除执行记录并写入审计，返回删除数量（权限 backup.executions.manage）
+      parameters:
+      - description: 要清空的执行记录 ID 列表
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.swaggerIDsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/swagger.swaggerGenericObject'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.swaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 清空执行记录
       tags:
       - 执行记录
   /api/backup/hosts:

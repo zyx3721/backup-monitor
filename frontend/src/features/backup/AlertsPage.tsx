@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { userHasPermission } from '@/lib/permissions';
 import { getStoredUser } from '@/lib/session';
 import { errorMessageOf } from '@/lib/toast-errors';
-import { deleteAlert, fetchAlerts, resolveAlert } from './api';
+import { clearAlerts, deleteAlert, fetchAlerts, resolveAlert } from './api';
 import { ExportDialog } from './ExportDialog';
 import { alertExportColumns } from './export-columns';
 import {
@@ -36,6 +36,7 @@ export function AlertsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(18);
   const [exportOpen, setExportOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const [deleting, setDeleting] = useState<Alert | null>(null);
   const { data = [], isLoading } = useQuery({
     queryKey: ['backup', 'alerts'],
@@ -60,6 +61,24 @@ export function AlertsPage() {
     },
     onError: error => toast.error(`告警记录删除失败：${errorMessageOf(error, '未知错误')}`),
   });
+
+  const clear = useMutation({
+    mutationFn: () => clearAlerts(filtered.map(alert => alert.id)),
+    onSuccess: response => {
+      setClearOpen(false);
+      toast.success(`已清空 ${response.deleted} 条告警记录`);
+      void queryClient.invalidateQueries({ queryKey: ['backup'] });
+    },
+    onError: error => toast.error(`告警记录清空失败：${errorMessageOf(error, '未知错误')}`),
+  });
+
+  function openClear() {
+    if (filtered.length === 0) {
+      toast.error('没有可清空的告警记录');
+      return;
+    }
+    setClearOpen(true);
+  }
 
   const filtered = useMemo(
     () =>
@@ -173,6 +192,17 @@ export function AlertsPage() {
               >
                 <Download size={16} />
                 导出
+              </Button>
+            ) : null}
+            {canManage ? (
+              <Button
+                variant="outline"
+                className="bm-danger-soft-button shrink-0"
+                onClick={openClear}
+                disabled={clear.isPending}
+              >
+                <Trash2 size={16} />
+                清空
               </Button>
             ) : null}
             <span className="ml-auto text-xs text-[var(--bm-text-muted)]">
@@ -297,6 +327,19 @@ export function AlertsPage() {
         successText={`已导出 ${filtered.length} 条告警`}
         auditModule="alerts"
       />
+      <ConfirmDialog
+        open={clearOpen}
+        title="清空告警记录"
+        description="清空后不可恢复"
+        detail={`确定清空当前筛选后的 ${filtered.length} 条告警记录吗？`}
+        confirmText="确认清空"
+        icon="delete"
+        horizontalHeader
+        busy={clear.isPending}
+        onOpenChange={open => !open && setClearOpen(false)}
+        onConfirm={() => clear.mutate()}
+      />
+
       <ConfirmDialog
         open={Boolean(deleting)}
         title="删除告警"
