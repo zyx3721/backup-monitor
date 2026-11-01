@@ -106,6 +106,34 @@ func countAlertsByType(t *testing.T, svc *service.BackupService, alertType strin
 	return count
 }
 
+func TestRunRetentionCleanupBypassesThrottle(t *testing.T) {
+	svc := newTestService(t)
+	now := time.Now().UTC()
+	svc.RunScheduler(now)
+	old := now.Add(-200 * 24 * time.Hour).Format(time.RFC3339)
+	if _, err := svc.Repo().DB().Exec(`INSERT INTO notifications(id,channel,type,level,status,created_at)
+		VALUES('n1','mail','backup_failed','critical','sent',?)`, old); err != nil {
+		t.Fatalf("insert notification: %v", err)
+	}
+	svc.RunScheduler(now.Add(time.Minute))
+	if got := countNotifications(t, svc); got != 1 {
+		t.Fatalf("notifications before forced cleanup = %d, want 1", got)
+	}
+	svc.RunRetentionCleanup(now.Add(time.Minute))
+	if got := countNotifications(t, svc); got != 0 {
+		t.Fatalf("notifications after forced cleanup = %d, want 0", got)
+	}
+}
+
+func countNotifications(t *testing.T, svc *service.BackupService) int {
+	t.Helper()
+	var count int
+	if err := svc.Repo().DB().QueryRow(`SELECT COUNT(*) FROM notifications`).Scan(&count); err != nil {
+		t.Fatalf("count notifications: %v", err)
+	}
+	return count
+}
+
 func TestCleanupNotifyRetentionIndependent(t *testing.T) {
 	cases := []struct {
 		name      string

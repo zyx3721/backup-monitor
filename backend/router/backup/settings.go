@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -46,6 +47,11 @@ func (a *Router) handleSaveSettings(w http.ResponseWriter, r *http.Request) {
 			a.hub.CloseAll()
 		}
 		a.hub.PushConfigChanged()
+	}
+	if previous.RetentionDays != settings.RetentionDays ||
+		previous.AuditRetentionDays != settings.AuditRetentionDays ||
+		previous.NotifyRetentionDays != settings.NotifyRetentionDays {
+		a.svc.RunRetentionCleanup(time.Now())
 	}
 	if settings != previous {
 		a.recordSettingsAudit(r, section, previous, settings)

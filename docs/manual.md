@@ -1434,7 +1434,7 @@ sqlite3 backend/data/backup_monitor.db "UPDATE users SET pass = '<生成的哈�
 | 未执行 `not_run` | 计划时刻 + 宽限期已过，「计划时刻 ± 匹配窗口」内没有执行记录，或记录晚于窗口 |
 | 无数据 `no_data` | 任务尚无执行记录且未到判定时刻 |
 
-主机状态由最近上报时间决定：超过「上报超时」判为异常，超过「离线阈值」判为离线。所有阈值位于 `basic_config` 的 `thresholds` 行（Agent 通道参数位于 `agent` 行），可在控制台调整，保存后通过 WebSocket 通知在线 Agent。
+主机状态由最近上报时间决定：超过「上报超时」判为异常，超过「离线阈值」判为离线。所有阈值位于 `basic_config` 的 `thresholds` 行（Agent 通道参数位于 `agent` 行），可在控制台调整，保存后通过 WebSocket 通知在线 Agent。保留天数保存后会立即触发一次清理，其余时间最多每小时清理一次。
 
 ## 12.3 Agent 部署
 

@@ -78,6 +78,14 @@ func (s *BackupService) RunScheduler(now time.Time) {
 	s.cleanup(now)
 }
 
+// RunRetentionCleanup 立即执行一次保留清理，忽略每小时节流；供保存保留设置后调用。
+func (s *BackupService) RunRetentionCleanup(now time.Time) {
+	s.mu.Lock()
+	s.lastCleanup = time.Time{}
+	s.mu.Unlock()
+	s.cleanup(now)
+}
+
 func (s *BackupService) cleanup(now time.Time) {
 	settings := s.Settings()
 	if settings.RetentionDays <= 0 && settings.AuditRetentionDays <= 0 && settings.NotifyRetentionDays <= 0 {
