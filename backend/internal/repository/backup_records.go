@@ -267,3 +267,15 @@ func (r *BackupRepository) AlertExistsActive(alertType, taskID, hostID string) (
 	}
 	return id, level, message, err
 }
+
+// AlertExistsRecent 判断抑制窗口内是否已产生同类型告警。
+func (r *BackupRepository) AlertExistsRecent(alertType, taskID, hostID, since string) (bool, error) {
+	var count int
+	var err error
+	if taskID != "" {
+		err = r.db.QueryRow(`SELECT COUNT(*) FROM alerts WHERE type=? AND task_id=? AND created_at>=?`, alertType, taskID, since).Scan(&count)
+	} else {
+		err = r.db.QueryRow(`SELECT COUNT(*) FROM alerts WHERE type=? AND host_id=? AND created_at>=?`, alertType, hostID, since).Scan(&count)
+	}
+	return count > 0, err
+}

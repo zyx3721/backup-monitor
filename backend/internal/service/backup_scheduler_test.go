@@ -59,7 +59,7 @@ func TestOfflineHostKeepsNotRunAlert(t *testing.T) {
 	}
 }
 
-func TestDedupeOffRaisesAlertEveryRun(t *testing.T) {
+func TestDedupeOffSuppressesRepeatsWithinHour(t *testing.T) {
 	svc := newTestService(t)
 	report := sampleReport()
 	report.Executions = nil
@@ -83,15 +83,24 @@ func TestDedupeOffRaisesAlertEveryRun(t *testing.T) {
 
 	svc.RunScheduler(now)
 	svc.RunScheduler(now.Add(30 * time.Second))
+	if got := countAlertsByType(t, svc, "report_timeout"); got != 1 {
+		t.Fatalf("dedupe off alerts within hour = %d, want 1", got)
+	}
+
+	if _, err := svc.Repo().DB().Exec(`UPDATE alerts SET created_at=? WHERE type='report_timeout'`,
+		now.Add(-2*time.Hour).Format("2006-01-02T15:04:05.000Z")); err != nil {
+		t.Fatalf("age alert: %v", err)
+	}
+	svc.RunScheduler(now.Add(time.Minute))
 	if got := countAlertsByType(t, svc, "report_timeout"); got != 2 {
-		t.Fatalf("dedupe off alerts = %d, want 2", got)
+		t.Fatalf("dedupe off alerts after hour = %d, want 2", got)
 	}
 
 	settings.DedupeAlerts = true
 	if err := svc.SaveSettings(settings); err != nil {
 		t.Fatalf("save settings: %v", err)
 	}
-	svc.RunScheduler(now.Add(60 * time.Second))
+	svc.RunScheduler(now.Add(90 * time.Second))
 	if got := countAlertsByType(t, svc, "report_timeout"); got != 2 {
 		t.Fatalf("dedupe on alerts = %d, want 2", got)
 	}
