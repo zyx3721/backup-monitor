@@ -190,6 +190,97 @@ func TestSchedulerNotRunAlertCarriesPlanDate(t *testing.T) {
 	t.Fatalf("alerts = %+v, want not_run containing %q", alerts, want)
 }
 
+func TestNextPlanExecutionIngestedEarlyKeepsPreviousPlan(t *testing.T) {
+	svc := newTestService(t)
+	settings := domain.DefaultAppSettings()
+	settings.ScheduleMatchWindowMinutes = 60
+	settings.NotRunGraceMinutes = 30
+	if err := svc.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
+	next := plan.Add(24 * time.Hour)
+	report := windowReport(plan, ptrTime(plan.Add(3*time.Second)))
+	report.Executions = append(report.Executions, domain.IngestExecution{
+		TaskName: "window-task", SessionID: "next-plan", State: "success", Trigger: "scheduled",
+		CreationTime: next.Add(3 * time.Second).UTC().Format(time.RFC3339),
+		StartTime:    next.Add(3 * time.Second).UTC().Format(time.RFC3339),
+		EndTime:      next.Add(53 * time.Second).UTC().Format(time.RFC3339),
+	})
+	if _, err := svc.Ingest(t.Context(), report); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	tasks, err := svc.Repo().ListTasks()
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("tasks = %d, err = %v", len(tasks), err)
+	}
+	evaluation := svc.EvaluateTask(tasks[0].ID, next.Add(-time.Minute))
+	if !evaluation.Plan.Equal(plan) {
+		t.Fatalf("plan = %s, want %s", evaluation.Plan, plan)
+	}
+	if evaluation.Status != "normal" {
+		t.Fatalf("status = %s, want normal（下一周期记录提前入库不应污染本次判定）", evaluation.Status)
+	}
+}
+
+func TestLaterScheduledExecutionKeepsWindowRecord(t *testing.T) {
+	svc := newTestService(t)
+	settings := domain.DefaultAppSettings()
+	settings.ScheduleMatchWindowMinutes = 60
+	settings.NotRunGraceMinutes = 30
+	if err := svc.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
+	report := windowReport(plan, ptrTime(plan.Add(3*time.Second)))
+	report.Executions = append(report.Executions, domain.IngestExecution{
+		TaskName: "window-task", SessionID: "late-retry", State: "success", Trigger: "scheduled",
+		CreationTime: plan.Add(5 * time.Hour).UTC().Format(time.RFC3339),
+		StartTime:    plan.Add(5 * time.Hour).UTC().Format(time.RFC3339),
+		EndTime:      plan.Add(5*time.Hour + time.Minute).UTC().Format(time.RFC3339),
+	})
+	if _, err := svc.Ingest(t.Context(), report); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	tasks, err := svc.Repo().ListTasks()
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("tasks = %d, err = %v", len(tasks), err)
+	}
+	evaluation := svc.EvaluateTask(tasks[0].ID, plan.Add(6*time.Hour))
+	if evaluation.Status != "normal" {
+		t.Fatalf("status = %s, want normal（窗口内成功记录不应被更晚记录顶掉）", evaluation.Status)
+	}
+}
+
+func TestLateOnlyExecutionStillReportsLate(t *testing.T) {
+	svc := newTestService(t)
+	settings := domain.DefaultAppSettings()
+	settings.ScheduleMatchWindowMinutes = 60
+	settings.NotRunGraceMinutes = 30
+	if err := svc.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
+	report := windowReport(plan, nil)
+	report.Executions = []domain.IngestExecution{{
+		TaskName: "window-task", SessionID: "late-only", State: "success", Trigger: "scheduled",
+		CreationTime: plan.Add(5 * time.Hour).UTC().Format(time.RFC3339),
+		StartTime:    plan.Add(5 * time.Hour).UTC().Format(time.RFC3339),
+		EndTime:      plan.Add(5*time.Hour + time.Minute).UTC().Format(time.RFC3339),
+	}}
+	if _, err := svc.Ingest(t.Context(), report); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	tasks, err := svc.Repo().ListTasks()
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("tasks = %d, err = %v", len(tasks), err)
+	}
+	evaluation := svc.EvaluateTask(tasks[0].ID, plan.Add(6*time.Hour))
+	if evaluation.Status != "not_run" || evaluation.Reason != "late" {
+		t.Fatalf("status = %s, reason = %s, want not_run/late", evaluation.Status, evaluation.Reason)
+	}
+}
+
 func activeNotRunCount(t *testing.T, svc *service.BackupService, taskID string) int {
 	t.Helper()
 	var count int

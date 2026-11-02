@@ -168,22 +168,12 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 	if err != nil {
 		return TaskEvaluation{Status: string(domain.TaskNoData)}
 	}
-	scheduledLatest, err := s.repo.LatestScheduledExecution(taskID)
-	if err != nil {
-		return TaskEvaluation{Status: string(domain.TaskNoData)}
-	}
 	evaluation := TaskEvaluation{Latest: latest}
 	statusFromLatest := func() string {
 		if latest == nil {
 			return string(domain.TaskNoData)
 		}
 		return executionStateToTaskStatus(latest.State)
-	}
-	statusFromScheduled := func() string {
-		if scheduledLatest == nil {
-			return string(domain.TaskNoData)
-		}
-		return executionStateToTaskStatus(scheduledLatest.State)
 	}
 	schedule := task.ScheduleCron
 	if schedule == "" {
@@ -196,26 +186,33 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 	}
 	settings := s.Settings()
 	window := time.Duration(settings.ScheduleMatchWindowMinutes) * time.Minute
-	created, createdOK := time.Time{}, false
-	if scheduledLatest != nil {
-		if parsed, err := parseTime(scheduledLatest.CreationTime); err == nil {
-			created, createdOK = parsed, true
-		}
-	}
 	evaluation.Plan = scheduled
-	evaluation.Matched = createdOK && !created.Before(scheduled.Add(-window)) && !created.After(scheduled.Add(window))
+	windowEnd := scheduled.Add(window)
+	if windowEnd.After(now) {
+		windowEnd = now
+	}
+	matched, err := s.repo.ScheduledExecutionWithin(taskID,
+		appcommon.FormatTimestamp(scheduled.Add(-window)), appcommon.FormatTimestamp(windowEnd))
+	if err != nil {
+		return TaskEvaluation{Status: string(domain.TaskNoData)}
+	}
+	evaluation.Matched = matched != nil
 	if now.Sub(scheduled) <= time.Duration(settings.NotRunGraceMinutes)*time.Minute {
 		evaluation.Status = statusFromLatest()
 		return evaluation
 	}
-	if evaluation.Matched {
-		evaluation.Status = statusFromScheduled()
+	if matched != nil {
+		evaluation.Status = executionStateToTaskStatus(matched.State)
 		return evaluation
 	}
 	evaluation.Status = string(domain.TaskNotRun)
 	evaluation.Reason = "missing"
-	if createdOK && created.After(scheduled.Add(window)) {
-		evaluation.Reason = "late"
+	if scheduled.Add(window).Before(now) {
+		late, err := s.repo.ScheduledExecutionAfter(taskID,
+			appcommon.FormatTimestamp(scheduled.Add(window)), appcommon.FormatTimestamp(now))
+		if err == nil && late != nil {
+			evaluation.Reason = "late"
+		}
 	}
 	return evaluation
 }

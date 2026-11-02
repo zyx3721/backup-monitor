@@ -142,12 +142,30 @@ func (r *BackupRepository) LatestExecution(taskID string) (*domain.BackupExecuti
 	return &exec, nil
 }
 
-// LatestScheduledExecution 返回任务最近一次非手动触发的执行，供计划匹配使用。
-func (r *BackupRepository) LatestScheduledExecution(taskID string) (*domain.BackupExecution, error) {
+// ScheduledExecutionWithin 返回任务在闭区间内最近一次非手动触发的执行，供计划匹配使用。
+func (r *BackupRepository) ScheduledExecutionWithin(taskID, from, to string) (*domain.BackupExecution, error) {
 	row := r.db.QueryRow(`SELECT id,task_id,'','','','',COALESCE(session_id,''),COALESCE(job_id,''),COALESCE(oib_id,''),state,
 		COALESCE(trigger,''),creation_time,COALESCE(start_time,''),COALESCE(end_time,''),COALESCE(processed_size,''),
 		COALESCE(transferred_size,''),COALESCE(artifact_path,''),exit_code,attempt,max_attempts,is_last_attempt,COALESCE(message,'')
-		FROM executions WHERE task_id=? AND COALESCE(trigger,'') <> 'manual' ORDER BY creation_time DESC LIMIT 1`, taskID)
+		FROM executions WHERE task_id=? AND COALESCE(trigger,'') <> 'manual'
+		AND creation_time >= ? AND creation_time <= ? ORDER BY creation_time DESC LIMIT 1`, taskID, from, to)
+	exec, err := scanExecution(row)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &exec, nil
+}
+
+// ScheduledExecutionAfter 返回任务在 after 之后、until 之前最近一次非手动触发的执行，供迟到判定使用。
+func (r *BackupRepository) ScheduledExecutionAfter(taskID, after, until string) (*domain.BackupExecution, error) {
+	row := r.db.QueryRow(`SELECT id,task_id,'','','','',COALESCE(session_id,''),COALESCE(job_id,''),COALESCE(oib_id,''),state,
+		COALESCE(trigger,''),creation_time,COALESCE(start_time,''),COALESCE(end_time,''),COALESCE(processed_size,''),
+		COALESCE(transferred_size,''),COALESCE(artifact_path,''),exit_code,attempt,max_attempts,is_last_attempt,COALESCE(message,'')
+		FROM executions WHERE task_id=? AND COALESCE(trigger,'') <> 'manual'
+		AND creation_time > ? AND creation_time <= ? ORDER BY creation_time DESC LIMIT 1`, taskID, after, until)
 	exec, err := scanExecution(row)
 	if err == sql.ErrNoRows {
 		return nil, nil
