@@ -87,6 +87,10 @@ export function BackupSettingsDetail({
       toast.error('主机离线阈值不能小于主机上报超时');
       return;
     }
+    if (form.notRunGraceMinutes > form.scheduleMatchWindowMinutes) {
+      toast.error('未执行宽限期不能大于计划匹配窗口');
+      return;
+    }
     setBusy(true);
     try {
       const next = await saveBackupSettings(form, section);
@@ -149,7 +153,7 @@ export function BackupSettingsDetail({
           />
           <NumberControl
             label="未执行宽限期"
-            description="计划时刻后多久仍未执行才判为「未执行」"
+            description="计划时刻后多久仍未执行才判为「未执行」（应不大于计划匹配窗口）"
             unit="分钟"
             min={1}
             max={1440}
@@ -159,7 +163,7 @@ export function BackupSettingsDetail({
           />
           <NumberControl
             label="计划匹配窗口"
-            description="执行记录需落在「计划时刻 ± 窗口」内才算本次执行；晚于「计划时刻 + 窗口」判为「未按时执行」"
+            description="执行记录晚于「计划时刻 + 窗口」判为「未按时执行」；可容忍最多 5 分钟的时钟偏差"
             unit="分钟"
             min={1}
             max={1440}

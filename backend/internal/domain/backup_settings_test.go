@@ -109,6 +109,16 @@ func TestValidateAppSettingsRejectsOfflineBelowReport(t *testing.T) {
 	}
 }
 
+func TestValidateAppSettingsRejectsGraceAboveMatchWindow(t *testing.T) {
+	got := ValidateAppSettings(map[string]any{
+		"notRunGraceMinutes":         90,
+		"scheduleMatchWindowMinutes": 60,
+	})
+	if got != "未执行宽限期不能大于计划匹配窗口" {
+		t.Fatalf("validation = %q", got)
+	}
+}
+
 func TestValidateAppSettingsAcceptsDefaults(t *testing.T) {
 	raw := map[string]any{
 		"reportTimeoutMinutes":  3,

@@ -158,6 +158,9 @@ func (s *BackupService) RecomputeTaskStatus(taskID string, now time.Time) string
 	return s.RecomputeTask(taskID, now).Status
 }
 
+// scheduleClockSkewTolerance 计划匹配的时钟容差：采集端时钟最多可比服务端快 5 分钟。
+const scheduleClockSkewTolerance = 5 * time.Minute
+
 // EvaluateTask 按计划与匹配窗口判定任务状态，不写库。
 func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluation {
 	task, err := s.repo.GetTask(taskID)
@@ -188,11 +191,11 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 	window := time.Duration(settings.ScheduleMatchWindowMinutes) * time.Minute
 	evaluation.Plan = scheduled
 	windowEnd := scheduled.Add(window)
-	if windowEnd.After(now) {
-		windowEnd = now
+	if limit := now.Add(scheduleClockSkewTolerance); windowEnd.After(limit) {
+		windowEnd = limit
 	}
 	matched, err := s.repo.ScheduledExecutionWithin(taskID,
-		appcommon.FormatTimestamp(scheduled.Add(-window)), appcommon.FormatTimestamp(windowEnd))
+		appcommon.FormatTimestamp(scheduled.Add(-scheduleClockSkewTolerance)), appcommon.FormatTimestamp(windowEnd))
 	if err != nil {
 		return TaskEvaluation{Status: string(domain.TaskNoData)}
 	}
@@ -209,7 +212,7 @@ func (s *BackupService) EvaluateTask(taskID string, now time.Time) TaskEvaluatio
 	evaluation.Reason = "missing"
 	if scheduled.Add(window).Before(now) {
 		late, err := s.repo.ScheduledExecutionAfter(taskID,
-			appcommon.FormatTimestamp(scheduled.Add(window)), appcommon.FormatTimestamp(now))
+			appcommon.FormatTimestamp(scheduled.Add(window)), appcommon.FormatTimestamp(now.Add(scheduleClockSkewTolerance)))
 		if err == nil && late != nil {
 			evaluation.Reason = "late"
 		}

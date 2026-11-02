@@ -34,27 +34,27 @@ func windowReport(plan time.Time, created *time.Time) domain.IngestReport {
 
 func ptrTime(value time.Time) *time.Time { return &value }
 
-func TestTaskMatchWindowIsSymmetric(t *testing.T) {
+func TestTaskMatchWindowOnlyLimitsPlanEnd(t *testing.T) {
 	plan := time.Date(2026, 10, 21, 23, 0, 0, 0, time.Local)
 	cases := []struct {
 		name    string
 		created *time.Time
 		now     time.Time
-		window  int
 		want    string
 	}{
-		{"早 30 分钟窗口 60", ptrTime(plan.Add(-30 * time.Minute)), plan.Add(45 * time.Minute), 60, "normal"},
-		{"早 30 分钟窗口 10", ptrTime(plan.Add(-30 * time.Minute)), plan.Add(45 * time.Minute), 10, "not_run"},
-		{"晚 40 分钟窗口 60", ptrTime(plan.Add(40 * time.Minute)), plan.Add(45 * time.Minute), 60, "normal"},
-		{"晚 40 分钟窗口 10", ptrTime(plan.Add(40 * time.Minute)), plan.Add(45 * time.Minute), 10, "not_run"},
-		{"晚 4 小时窗口 60", ptrTime(plan.Add(4 * time.Hour)), plan.Add(4*time.Hour + 10*time.Minute), 60, "not_run"},
-		{"无执行记录", nil, plan.Add(45 * time.Minute), 60, "not_run"},
+		{"计划时刻执行", ptrTime(plan), plan.Add(5 * time.Minute), "normal"},
+		{"提前 4 分钟（时钟容差内）", ptrTime(plan.Add(-4 * time.Minute)), plan.Add(5 * time.Minute), "normal"},
+		{"提前 30 分钟（超出时钟容差）", ptrTime(plan.Add(-30 * time.Minute)), plan.Add(5 * time.Minute), "not_run"},
+		{"晚 40 分钟（窗口内）", ptrTime(plan.Add(40 * time.Minute)), plan.Add(45 * time.Minute), "normal"},
+		{"晚 70 分钟（超出窗口）", ptrTime(plan.Add(70 * time.Minute)), plan.Add(80 * time.Minute), "not_run"},
+		{"无执行记录", nil, plan.Add(45 * time.Minute), "not_run"},
 	}
 	for _, item := range cases {
 		t.Run(item.name, func(t *testing.T) {
 			svc := newTestService(t)
 			settings := domain.DefaultAppSettings()
-			settings.ScheduleMatchWindowMinutes = item.window
+			settings.ScheduleMatchWindowMinutes = 60
+			settings.NotRunGraceMinutes = 1
 			if err := svc.SaveSettings(settings); err != nil {
 				t.Fatalf("save settings: %v", err)
 			}

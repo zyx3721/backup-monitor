@@ -512,7 +512,7 @@ Three usual causes: the agent is not running (`systemctl status backup-agent`), 
 
 **A task is marked "missed" although it did run.**
 
-A run is only marked missed when nothing arrives **30 minutes** after the scheduled time, and records are matched within a **60-minute** window; records outside it cannot backfill the verdict. If the task was never discovered at all, check that a profile under **Agent Management → Profiles** matches its hostname, then read the agent log.
+A run is only marked missed when nothing arrives **30 minutes** after the scheduled time; records are matched from 5 minutes before the scheduled time (clock tolerance) up to the **60-minute** match window, and anything later is treated as late and cannot backfill the verdict. The grace period cannot exceed the match window. If the task was never discovered at all, check that a profile under **Agent Management → Profiles** matches its hostname, then read the agent log.
 
 **Notifications are not delivered.**
 

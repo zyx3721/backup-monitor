@@ -345,6 +345,11 @@ func ValidateAppSettings(raw map[string]any) string {
 	if offline < report {
 		return "主机离线阈值不能小于主机上报超时"
 	}
+	grace := boundedInt(raw["notRunGraceMinutes"], d.NotRunGraceMinutes, 1, maxNotRunGraceMinutes)
+	window := boundedInt(raw["scheduleMatchWindowMinutes"], d.ScheduleMatchWindowMinutes, 1, maxScheduleMatchWindowMinutes)
+	if grace > window {
+		return "未执行宽限期不能大于计划匹配窗口"
+	}
 	if agentRaw, ok := raw["agent"].(map[string]any); ok {
 		wsMin := nonNegativeInt(agentRaw["wsBackoffMinSec"], d.Agent.WSBackoffMinSec)
 		wsMax := nonNegativeInt(agentRaw["wsBackoffMaxSec"], d.Agent.WSBackoffMaxSec)
