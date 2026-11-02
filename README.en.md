@@ -607,6 +607,7 @@ The project ships on **two independent version lines**, versioned and recorded s
 
 | Version | Released | Changelog |
 | --- | --- | --- |
+| v1.1.2 | 2026-11-02 | [v1.1.2](verchanglog/v1.1.2.md) |
 | v1.1.1 | 2026-11-02 | [v1.1.1](verchanglog/v1.1.1.md) |
 | v1.1.0 | 2026-11-02 | [v1.1.0](verchanglog/v1.1.0.md) |
 | v1.0.0 | 2026-10-26 | [v1.0.0](verchanglog/v1.0.0.md) |
