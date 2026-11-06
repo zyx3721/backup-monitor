@@ -99,7 +99,7 @@ func TestExecutionFromStatus(t *testing.T) {
 		ScheduleCron: "0 23 * * *",
 		Script:       "/opt/backup/db.sh",
 	}
-	execution, valid := executionFromStatus(task, path, info, now, scheduled, true, false, api.DefaultProfileConfig())
+	execution, valid := executionFromStatus(task, path, info, now, scheduled, true, false, false, api.DefaultProfileConfig())
 	if !valid {
 		t.Fatal("expected a valid execution")
 	}
@@ -124,6 +124,64 @@ func TestExecutionFromStatus(t *testing.T) {
 	}
 	if execution.ExitCode == nil || *execution.ExitCode != 0 {
 		t.Errorf("exit code = %#v", execution.ExitCode)
+	}
+}
+
+func TestExecutionFromStatusMissingEnd(t *testing.T) {
+	zone := time.FixedZone("CST", 8*3600)
+	start := time.Date(2026, 11, 5, 23, 30, 1, 0, zone)
+	path := "/var/log/backup/mongodb-backup.status"
+	info := statusfile.Info{Start: start, HasStart: true}
+	task := discover.Task{Name: "mongodb-backup"}
+	profile := api.DefaultProfileConfig()
+
+	cases := []struct {
+		name          string
+		now           time.Time
+		running       bool
+		procAvailable bool
+		wantState     string
+		wantMessage   string
+		wantEnd       bool
+	}{
+		{"process running", start.Add(3 * time.Hour), true, false, "running", "执行中", false},
+		{"process available but stopped", start.Add(time.Minute), false, true, "failed", "执行中断（缺少结束时间）（" + path + "）", false},
+		{"no proc keyword within grace", start.Add(5 * time.Minute), false, false, "running", "执行中（进程探测不可用，按时间窗口判定）", false},
+		{"no proc keyword beyond grace", start.Add(20 * time.Minute), false, false, "failed", "执行中断（缺少结束时间）（" + path + "）", false},
+	}
+	for _, tc := range cases {
+		execution, ok := executionFromStatus(task, path, info, tc.now, time.Time{}, false, tc.running, tc.procAvailable, profile)
+		if !ok {
+			t.Fatalf("%s: expected an execution", tc.name)
+		}
+		if execution.State != tc.wantState {
+			t.Errorf("%s: state = %q, want %q", tc.name, execution.State, tc.wantState)
+		}
+		if execution.Message != tc.wantMessage {
+			t.Errorf("%s: message = %q, want %q", tc.name, execution.Message, tc.wantMessage)
+		}
+		if (execution.EndTime != "") != tc.wantEnd {
+			t.Errorf("%s: endTime = %q", tc.name, execution.EndTime)
+		}
+	}
+}
+
+func TestExecutionFromStatusRunningStatusMissingEnd(t *testing.T) {
+	zone := time.FixedZone("CST", 8*3600)
+	start := time.Date(2026, 11, 5, 23, 30, 1, 0, zone)
+	path := "/var/log/backup/mongodb-backup.status"
+	info := statusfile.Info{Start: start, HasStart: true, Status: "running"}
+	task := discover.Task{Name: "mongodb-backup"}
+
+	execution, ok := executionFromStatus(task, path, info, start.Add(20*time.Minute), time.Time{}, false, false, false, api.DefaultProfileConfig())
+	if !ok {
+		t.Fatal("expected an execution")
+	}
+	if execution.State != "failed" {
+		t.Errorf("state = %q, want failed", execution.State)
+	}
+	if execution.Message != "执行中断（缺少结束时间）（"+path+"）" {
+		t.Errorf("message = %q", execution.Message)
 	}
 }
 

@@ -410,6 +410,8 @@ status=success
 
 支持 `start`、`end`、`time`、`size`、`transferred`、`exit`、`status` 等键，大小支持 B/KB/MB/GB/TB 与二进制单位。
 
+状态文件只有 `start`、没有 `end` 时按以下口径判定：命中 `proc` 进程关键字判为运行中；配置了 `proc` 但进程已退出，立即判为「执行中断（缺少结束时间）」；未配置 `proc` 时先给 15 分钟窗口，窗口内视为运行中，超过窗口仍无 `end` 判为执行中断。
+
 ### 备份产物
 
 `artifactCheck=true` 且任务配置了产物路径时，Agent 检查文件 mtime 与大小，生成执行记录：

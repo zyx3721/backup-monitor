@@ -15,6 +15,8 @@ import (
 	"backup-monitor-agent/internal/veeam"
 )
 
+const statusRunningGrace = 15 * time.Minute
+
 func (c *Collector) executionsFor(task discover.Task, profile api.ProfileConfig, now time.Time) []api.IngestExecution {
 	var scheduled time.Time
 	hasScheduled := false
@@ -22,9 +24,10 @@ func (c *Collector) executionsFor(task discover.Task, profile api.ProfileConfig,
 		scheduled, hasScheduled = cron.GetLastScheduledTime(task.ScheduleCron, now)
 	}
 	running := c.procRunning(task)
+	procAvailable := proc.Keyword(task.ProcKeyword) != ""
 
 	executions := make([]api.IngestExecution, 0, 2)
-	statusExec := c.statusExecution(task, profile, now, scheduled, hasScheduled, running)
+	statusExec := c.statusExecution(task, profile, now, scheduled, hasScheduled, running, procAvailable)
 	if statusExec != nil {
 		executions = append(executions, *statusExec)
 	}
@@ -81,7 +84,7 @@ func procExecution(task discover.Task, scheduled time.Time) (api.IngestExecution
 	}, true
 }
 
-func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfig, now, scheduled time.Time, hasScheduled, running bool) *api.IngestExecution {
+func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfig, now, scheduled time.Time, hasScheduled, running, procAvailable bool) *api.IngestExecution {
 	paths := statusFileCandidates(task)
 	for _, path := range paths {
 		info, err := statusfile.ParseFile(path)
@@ -89,7 +92,7 @@ func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfi
 			c.logf("读取状态文件 %s 失败：%v", path, err)
 			continue
 		}
-		execution, ok := executionFromStatus(task, path, info, now, scheduled, hasScheduled, running, profile)
+		execution, ok := executionFromStatus(task, path, info, now, scheduled, hasScheduled, running, procAvailable, profile)
 		if ok {
 			return &execution
 		}
@@ -97,15 +100,32 @@ func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfi
 	return nil
 }
 
-func executionFromStatus(task discover.Task, path string, info statusfile.Info, now, scheduled time.Time, hasScheduled, running bool, profile api.ProfileConfig) (api.IngestExecution, bool) {
+func executionFromStatus(task discover.Task, path string, info statusfile.Info, now, scheduled time.Time, hasScheduled, running, procAvailable bool, profile api.ProfileConfig) (api.IngestExecution, bool) {
 	state := normalizeExecutionState(info.Status)
 	if state == "" && info.HasExit {
 		state = stateFromExit(info.ExitCode)
 	}
-	if state == "" {
+	message := ""
+	interrupted := false
+	if state == "" || state == "running" {
 		if info.HasStart && !info.HasEnd {
-			state = "running"
-		} else if info.HasEnd {
+			switch {
+			case running:
+				state = "running"
+				message = "执行中"
+			case procAvailable:
+				state = "failed"
+				message = interruptedMessage(path)
+				interrupted = true
+			case now.Sub(info.Start) < statusRunningGrace:
+				state = "running"
+				message = "执行中（进程探测不可用，按时间窗口判定）"
+			default:
+				state = "failed"
+				message = interruptedMessage(path)
+				interrupted = true
+			}
+		} else if state == "" && info.HasEnd {
 			state = "success"
 		}
 	}
@@ -133,11 +153,14 @@ func executionFromStatus(task discover.Task, path string, info statusfile.Info, 
 		start = creation
 	}
 	end := info.End
-	if end.IsZero() && state != "running" {
+	if end.IsZero() && state != "running" && !interrupted {
 		end = creation
 	}
-	if state == "running" {
+	if state == "running" || interrupted {
 		end = time.Time{}
+	}
+	if message == "" {
+		message = "状态文件：" + path
 	}
 
 	execution := api.IngestExecution{
@@ -149,7 +172,7 @@ func executionFromStatus(task discover.Task, path string, info statusfile.Info, 
 		CreationTime:  formatTime(creation),
 		StartTime:     formatTime(start),
 		EndTime:       formatTime(end),
-		Message:       "状态文件：" + path,
+		Message:       message,
 	}
 	if info.HasSize {
 		execution.ProcessedSize = statusfile.FormatSize(info.SizeBytes)
@@ -162,6 +185,11 @@ func executionFromStatus(task discover.Task, path string, info statusfile.Info, 
 		execution.ExitCode = &code
 	}
 	return execution, true
+}
+
+// interruptedMessage 生成缺少结束时间时的执行中断消息。
+func interruptedMessage(path string) string {
+	return "执行中断（缺少结束时间）（" + path + "）"
 }
 
 func lastRunExecution(task discover.Task, scheduled time.Time, hasScheduled bool, profile api.ProfileConfig) (api.IngestExecution, bool) {

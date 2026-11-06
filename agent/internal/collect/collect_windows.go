@@ -31,7 +31,7 @@ func (c *Collector) platformEntries(_ context.Context, profile api.ProfileConfig
 			"command":    "veeam-status",
 		},
 	}
-	execution := c.statusExecution(task, profile, now, time.Time{}, false, false)
+	execution := c.statusExecution(task, profile, now, time.Time{}, false, false, false)
 	if execution == nil {
 		return nil
 	}
