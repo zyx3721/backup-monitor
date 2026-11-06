@@ -616,6 +616,7 @@ The project ships on **two independent version lines**, versioned and recorded s
 
 | Version | Released | Changelog |
 | --- | --- | --- |
+| agent-v1.1.0 | 2026-11-06 | [agent-v1.1.0](verchanglog/agent-v1.1.0.md) |
 | agent-v1.0.0 | 2026-10-26 | [agent-v1.0.0](verchanglog/agent-v1.0.0.md) |
 
 Both sets of artifacts and release notes live on [GitHub Releases](https://github.com/zyx3721/backup-monitor/releases), distinguished by tag prefix.
