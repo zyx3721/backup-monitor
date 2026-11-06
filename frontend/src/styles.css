@@ -1841,6 +1841,13 @@
   --bm-event-text: #be123c;
 }
 
+/* 执行详情失败横幅 */
+.bm-execution-error {
+  border: 1px solid rgba(var(--bm-event-rgb), 0.35);
+  background: rgba(var(--bm-event-rgb), 0.1);
+  color: var(--bm-event-text);
+}
+
 :root[data-bm-theme='light'] .bm-event-tone-warning {
   --bm-event-text: #b45309;
 }

@@ -1,3 +1,4 @@
+import { CircleX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ExecutionPair, ExecutionWideRow } from './ExecutionDetailRows';
 import { ExecutionStateTag, MethodTag, formatTime } from './components';
@@ -24,86 +25,105 @@ export function ExecutionDetailDialog({
           <DialogTitle>{title ? `执行详情 - ${title}` : '执行详情'}</DialogTitle>
         </DialogHeader>
         {execution ? (
-          <div className="overflow-hidden rounded-lg border border-[var(--bm-border)] text-sm">
-            <ExecutionPair
-              label="主机"
-              value={execution.hostName || task?.hostName || '-'}
-              rightLabel="任务"
-              rightValue={execution.taskName || task?.name || '-'}
-            />
-            <ExecutionPair
-              label="备份方式"
-              value={
-                execution.taskType ? (
-                  <MethodTag method={execution.taskType} />
-                ) : task ? (
-                  <MethodTag method={task.type} />
-                ) : (
-                  '-'
-                )
-              }
-              rightLabel="状态"
-              rightValue={<ExecutionStateTag state={execution.state} />}
-            />
-            <ExecutionPair
-              label="触发"
-              value={
-                execution.trigger === 'manual'
-                  ? '手动'
-                  : execution.trigger === 'scheduled'
-                    ? '定时'
-                    : '-'
-              }
-              rightLabel="耗时"
-              rightValue={executionDuration(execution)}
-            />
-            <ExecutionPair
-              label="创建时间"
-              value={formatTime(execution.creationTime)}
-              rightLabel="执行时间"
-              rightValue={formatTime(execution.startTime)}
-            />
-            <ExecutionPair
-              label="结束时间"
-              value={formatTime(execution.endTime)}
-              rightLabel={veeamExecution ? '处理大小' : '备份大小'}
-              rightValue={
-                veeamExecution
-                  ? sizeLabel(execution.processedSize)
-                  : sizeLabel(execution.transferredSize || execution.processedSize)
-              }
-            />
-            {veeamExecution ? (
+          <div className="space-y-4">
+            {execution.state === 'failed' ? (
+              <div className="bm-execution-error bm-event-tone-danger flex items-start gap-3 rounded-lg px-4 py-3">
+                <CircleX className="mt-0.5 shrink-0" size={20} />
+                <div className="min-w-0">
+                  <div className="font-semibold">执行失败</div>
+                  <div className="mt-1 break-all text-sm">
+                    错误信息：{execution.message || '未知错误'}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            <div className="overflow-hidden rounded-lg border border-[var(--bm-border)] text-sm">
               <ExecutionPair
-                label="备份大小"
-                value={sizeLabel(execution.transferredSize)}
-                rightLabel="尝试次数"
+                label="主机"
+                value={execution.hostName || task?.hostName || '-'}
+                rightLabel="任务"
+                rightValue={execution.taskName || task?.name || '-'}
+              />
+              <ExecutionPair
+                label="备份方式"
+                value={
+                  execution.taskType ? (
+                    <MethodTag method={execution.taskType} />
+                  ) : task ? (
+                    <MethodTag method={task.type} />
+                  ) : (
+                    '-'
+                  )
+                }
+                rightLabel="状态"
+                rightValue={<ExecutionStateTag state={execution.state} />}
+              />
+              <ExecutionPair
+                label="触发"
+                value={
+                  execution.trigger === 'manual'
+                    ? '手动'
+                    : execution.trigger === 'scheduled'
+                      ? '定时'
+                      : '-'
+                }
+                rightLabel="耗时"
+                rightValue={executionDuration(execution)}
+              />
+              <ExecutionPair
+                label="创建时间"
+                value={formatTime(execution.creationTime)}
+                rightLabel="执行时间"
+                rightValue={formatTime(execution.startTime)}
+              />
+              <ExecutionPair
+                label="结束时间"
+                value={formatTime(execution.endTime)}
+                rightLabel={veeamExecution ? '处理大小' : '备份大小'}
                 rightValue={
-                  execution.attempt === undefined
-                    ? '-'
-                    : `${execution.attempt} / ${execution.maxAttempts ?? 1}`
+                  veeamExecution
+                    ? sizeLabel(execution.processedSize)
+                    : sizeLabel(execution.transferredSize || execution.processedSize)
                 }
               />
-            ) : null}
-            {!veeamExecution && execution.artifactPath ? (
-              <ExecutionWideRow label="备份产物" value={execution.artifactPath} />
-            ) : null}
-            <ExecutionPair
-              label="最后尝试"
-              value={
-                execution.isLastAttempt === undefined ? '-' : execution.isLastAttempt ? '是' : '否'
-              }
-              rightLabel="会话 ID"
-              rightValue={
-                veeamExecution ? formatExecutionID(execution.sessionId) : execution.sessionId || '-'
-              }
-            />
-            {veeamExecution ? (
-              <>
-                <ExecutionWideRow label="Job ID" value={formatExecutionID(execution.jobId)} />
-                <ExecutionWideRow label="OIB ID" value={formatExecutionID(execution.oibId)} />
-              </>
-            ) : null}
+              {veeamExecution ? (
+                <ExecutionPair
+                  label="备份大小"
+                  value={sizeLabel(execution.transferredSize)}
+                  rightLabel="尝试次数"
+                  rightValue={
+                    execution.attempt === undefined
+                      ? '-'
+                      : `${execution.attempt} / ${execution.maxAttempts ?? 1}`
+                  }
+                />
+              ) : null}
+              {!veeamExecution && execution.artifactPath ? (
+                <ExecutionWideRow label="备份产物" value={execution.artifactPath} />
+              ) : null}
+              <ExecutionPair
+                label="最后尝试"
+                value={
+                  execution.isLastAttempt === undefined
+                    ? '-'
+                    : execution.isLastAttempt
+                      ? '是'
+                      : '否'
+                }
+                rightLabel="会话 ID"
+                rightValue={
+                  veeamExecution
+                    ? formatExecutionID(execution.sessionId)
+                    : execution.sessionId || '-'
+                }
+              />
+              {veeamExecution ? (
+                <>
+                  <ExecutionWideRow label="Job ID" value={formatExecutionID(execution.jobId)} />
+                  <ExecutionWideRow label="OIB ID" value={formatExecutionID(execution.oibId)} />
+                </>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </DialogContent>
