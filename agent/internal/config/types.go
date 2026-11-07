@@ -30,7 +30,7 @@ const (
 )
 
 // Version 是当前 Agent 版本号，可由构建参数覆盖。
-var Version = "1.1.0"
+var Version = "1.1.1"
 
 // Local 是 Agent 本地启动配置，优先级为命令行参数、环境变量、JSON 文件、默认值。
 type Local struct {
