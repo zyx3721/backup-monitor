@@ -98,3 +98,6 @@ work/*
 优化.md
 相关提示词.md
 docs/reverse-engineering.md
+
+# 本地逆向分析缓存
+temp/
