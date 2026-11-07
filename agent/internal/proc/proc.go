@@ -10,34 +10,49 @@ import (
 const cacheTTL = 3 * time.Second
 
 var (
-	cacheMu       sync.Mutex
-	cacheCommands []string
-	cacheAt       time.Time
+	cacheMu        sync.Mutex
+	cacheCommands  []string
+	cacheAvailable bool
+	cacheAt        time.Time
 )
 
-// Keyword 归一化任务配置里的进程关键字，空串表示不启用进程探测。
-func Keyword(value string) string {
-	return strings.Trim(strings.TrimSpace(value), `"'`)
+// Keyword 按顺序返回首个非空的进程关键字，空串表示所有候选均为空。
+func Keyword(values ...string) string {
+	for _, value := range values {
+		if keyword := strings.Trim(strings.TrimSpace(value), `"'`); keyword != "" {
+			return keyword
+		}
+	}
+	return ""
 }
 
-// Running 判断是否存在命令行命中关键字的进程。
-func Running(keyword string) bool {
+// Running 判断是否存在命令行命中关键字的进程，并返回进程列表是否可用。
+func Running(keyword string) (bool, bool) {
 	keyword = Keyword(keyword)
 	if keyword == "" {
-		return false
+		return false, false
 	}
-	return matchCommands(snapshot(), keyword)
+	commands, available := snapshot()
+	return matchSnapshot(commands, available, keyword)
 }
 
-func snapshot() []string {
+func matchSnapshot(commands []string, available bool, keyword string) (bool, bool) {
+	keyword = Keyword(keyword)
+	if keyword == "" || !available {
+		return false, false
+	}
+	return matchCommands(commands, keyword), true
+}
+
+func snapshot() ([]string, bool) {
 	cacheMu.Lock()
 	defer cacheMu.Unlock()
 	if time.Since(cacheAt) < cacheTTL {
-		return cacheCommands
+		return cacheCommands, cacheAvailable
 	}
-	cacheCommands = commands()
+	cacheCommands, cacheAvailable = commands()
 	cacheAt = time.Now()
-	return cacheCommands
+	return cacheCommands, cacheAvailable
 }
 
 func matchCommands(commands []string, keyword string) bool {

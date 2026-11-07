@@ -10,19 +10,19 @@ import (
 	"time"
 )
 
-func commands() []string {
+func commands() ([]string, bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	output, err := exec.CommandContext(ctx, "tasklist.exe", "/fo", "csv", "/nh").Output()
 	if err != nil {
-		return nil
+		return nil, false
 	}
 	reader := csv.NewReader(strings.NewReader(string(output)))
 	reader.FieldsPerRecord = -1
 	reader.LazyQuotes = true
 	records, err := reader.ReadAll()
 	if err != nil {
-		return nil
+		return nil, false
 	}
 	list := make([]string, 0, len(records))
 	for _, record := range records {
@@ -33,5 +33,5 @@ func commands() []string {
 			list = append(list, name)
 		}
 	}
-	return list
+	return list, len(list) > 0
 }

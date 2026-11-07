@@ -23,11 +23,11 @@ func (c *Collector) executionsFor(task discover.Task, profile api.ProfileConfig,
 	if strings.TrimSpace(task.ScheduleCron) != "" {
 		scheduled, hasScheduled = cron.GetLastScheduledTime(task.ScheduleCron, now)
 	}
-	running := c.procRunning(task)
-	procAvailable := proc.Keyword(task.ProcKeyword) != ""
+	keyword := taskKeyword(task)
+	running, probeAvailable := c.procRunning(task, keyword)
 
 	executions := make([]api.IngestExecution, 0, 2)
-	statusExec := c.statusExecution(task, profile, now, scheduled, hasScheduled, running, procAvailable)
+	statusExec := c.statusExecution(task, profile, now, scheduled, hasScheduled, running, probeAvailable)
 	if statusExec != nil {
 		executions = append(executions, *statusExec)
 	}
@@ -49,26 +49,23 @@ func (c *Collector) executionsFor(task discover.Task, profile api.ProfileConfig,
 		}
 	}
 	if statusExec == nil && running && hasScheduled {
-		if execution, ok := procExecution(task, scheduled); ok {
+		if execution, ok := procExecution(task, scheduled, keyword); ok {
 			executions = append(executions, execution)
 		}
 	}
 	return dedupeExecutions(executions)
 }
 
-func (c *Collector) procRunning(task discover.Task) bool {
-	keyword := proc.Keyword(task.ProcKeyword)
-	if keyword == "" {
-		return false
-	}
-	if !proc.Running(keyword) {
-		return false
+func (c *Collector) procRunning(task discover.Task, keyword string) (bool, bool) {
+	found, available := proc.Running(keyword)
+	if !found {
+		return false, available
 	}
 	c.logf("任务 %s 正在执行：匹配进程 %q", task.Name, keyword)
-	return true
+	return true, available
 }
 
-func procExecution(task discover.Task, scheduled time.Time) (api.IngestExecution, bool) {
+func procExecution(task discover.Task, scheduled time.Time, keyword string) (api.IngestExecution, bool) {
 	if scheduled.IsZero() {
 		return api.IngestExecution{}, false
 	}
@@ -80,11 +77,25 @@ func procExecution(task discover.Task, scheduled time.Time) (api.IngestExecution
 		Trigger:       "scheduled",
 		CreationTime:  formatTime(scheduled),
 		StartTime:     formatTime(scheduled),
-		Message:       fmt.Sprintf("进程运行中（proc=%s）", proc.Keyword(task.ProcKeyword)),
+		Message:       fmt.Sprintf("进程运行中（proc=%s）", keyword),
 	}, true
 }
 
-func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfig, now, scheduled time.Time, hasScheduled, running, procAvailable bool) *api.IngestExecution {
+// taskKeyword 按任务标签、脚本名、任务名的顺序取进程关键字。
+func taskKeyword(task discover.Task) string {
+	return proc.Keyword(task.ProcKeyword, scriptName(task.Config), task.Name)
+}
+
+// scriptName 取任务配置中脚本路径的文件名。
+func scriptName(config map[string]any) string {
+	script := configString(config, "script")
+	if script == "" {
+		return ""
+	}
+	return filepath.Base(script)
+}
+
+func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfig, now, scheduled time.Time, hasScheduled, running, probeAvailable bool) *api.IngestExecution {
 	paths := statusFileCandidates(task)
 	for _, path := range paths {
 		info, err := statusfile.ParseFile(path)
@@ -92,7 +103,7 @@ func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfi
 			c.logf("读取状态文件 %s 失败：%v", path, err)
 			continue
 		}
-		execution, ok := executionFromStatus(task, path, info, now, scheduled, hasScheduled, running, procAvailable, profile)
+		execution, ok := executionFromStatus(task, path, info, now, scheduled, hasScheduled, running, probeAvailable, profile)
 		if ok {
 			return &execution
 		}
@@ -100,7 +111,7 @@ func (c *Collector) statusExecution(task discover.Task, profile api.ProfileConfi
 	return nil
 }
 
-func executionFromStatus(task discover.Task, path string, info statusfile.Info, now, scheduled time.Time, hasScheduled, running, procAvailable bool, profile api.ProfileConfig) (api.IngestExecution, bool) {
+func executionFromStatus(task discover.Task, path string, info statusfile.Info, now, scheduled time.Time, hasScheduled, running, probeAvailable bool, profile api.ProfileConfig) (api.IngestExecution, bool) {
 	state := normalizeExecutionState(info.Status)
 	if state == "" && info.HasExit {
 		state = stateFromExit(info.ExitCode)
@@ -113,7 +124,7 @@ func executionFromStatus(task discover.Task, path string, info statusfile.Info, 
 			case running:
 				state = "running"
 				message = "执行中"
-			case procAvailable:
+			case probeAvailable:
 				state = "failed"
 				message = interruptedMessage(path)
 				interrupted = true

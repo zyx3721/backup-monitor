@@ -377,7 +377,7 @@ Tag values support `;`, `,` or space-separated key-value pairs; quote values tha
 | `script` | Script path used for status files and process probing |
 | `status` / `statusFile` | Explicit status file path |
 | `artifact` / `path` / `dir` | Backup artifact file or directory |
-| `proc` / `process` | Process keyword; when a local process matches, the task is considered running. Empty disables probing |
+| `proc` / `process` | Process keyword; when a local process matches, the task is considered running. When empty, falls back to the script name and then the task name |
 
 On Linux, `proc` matches the full command line (`/proc/<pid>/cmdline`); on Windows it matches the process name (`tasklist`). Precedence: a status file that reports success or failure wins; without a status-file conclusion, a matching process marks the task as running; when no process matches, the original judgement is unchanged. A matching process with neither a status file nor a scheduled time produces no execution record.
 
@@ -409,6 +409,8 @@ status=success
 ```
 
 Supported keys include `start`, `end`, `time`, `size`, `transferred`, `exit` and `status`; sizes accept B/KB/MB/GB/TB and binary units.
+
+When a status file has a `start` but no `end`, the process keyword is resolved in order from the task `proc` tag, the script name and the task name. A matching process keeps the task running. If process probing is available but no process matches, the execution immediately becomes `failed` with the message `执行中断（缺少结束时间）` (the exact Chinese status text). If process probing is unavailable, a 15-minute window is allowed: within the window the task is treated as running, and after it the execution becomes interrupted.
 
 ### Backup artifacts
 

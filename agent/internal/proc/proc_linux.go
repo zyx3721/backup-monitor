@@ -9,10 +9,10 @@ import (
 	"strings"
 )
 
-func commands() []string {
+func commands() ([]string, bool) {
 	entries, err := os.ReadDir("/proc")
 	if err != nil {
-		return nil
+		return nil, false
 	}
 	self := os.Getpid()
 	list := make([]string, 0, len(entries))
@@ -33,5 +33,5 @@ func commands() []string {
 			list = append(list, command)
 		}
 	}
-	return list
+	return list, len(list) > 0
 }

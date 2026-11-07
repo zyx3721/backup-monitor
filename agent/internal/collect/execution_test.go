@@ -20,7 +20,7 @@ func TestProcExecution(t *testing.T) {
 	scheduled := time.Date(2026, 10, 21, 23, 0, 0, 0, zone)
 	task := discover.Task{Name: "db", ProcKeyword: " mysqldump "}
 
-	execution, ok := procExecution(task, scheduled)
+	execution, ok := procExecution(task, scheduled, taskKeyword(task))
 	if !ok {
 		t.Fatal("expected a proc execution")
 	}
@@ -39,8 +39,27 @@ func TestProcExecution(t *testing.T) {
 	if execution.IsLastAttempt == nil || !*execution.IsLastAttempt {
 		t.Error("proc execution must be last attempt")
 	}
-	if _, ok := procExecution(task, time.Time{}); ok {
+	if _, ok := procExecution(task, time.Time{}, taskKeyword(task)); ok {
 		t.Error("zero scheduled time must not produce an execution")
+	}
+}
+
+func TestTaskKeyword(t *testing.T) {
+	items := []struct {
+		name string
+		task discover.Task
+		want string
+	}{
+		{"proc label", discover.Task{Name: "db", ProcKeyword: " mysqldump "}, "mysqldump"},
+		{"script name", discover.Task{Name: "rsync-ecs-gz", Config: map[string]any{"script": "/opt/backup/rsync-ecs-gz.sh"}}, "rsync-ecs-gz.sh"},
+		{"task name", discover.Task{Name: "rsync-ecs-gz"}, "rsync-ecs-gz"},
+		{"invalid script", discover.Task{Name: "db", Config: map[string]any{"script": 123}}, "db"},
+		{"blank script", discover.Task{Name: "db", Config: map[string]any{"script": "   "}}, "db"},
+	}
+	for _, item := range items {
+		if got := taskKeyword(item.task); got != item.want {
+			t.Errorf("%s: taskKeyword = %q, want %q", item.name, got, item.want)
+		}
 	}
 }
 
@@ -136,21 +155,22 @@ func TestExecutionFromStatusMissingEnd(t *testing.T) {
 	profile := api.DefaultProfileConfig()
 
 	cases := []struct {
-		name          string
-		now           time.Time
-		running       bool
-		procAvailable bool
-		wantState     string
-		wantMessage   string
-		wantEnd       bool
+		name           string
+		now            time.Time
+		running        bool
+		probeAvailable bool
+		wantState      string
+		wantMessage    string
+		wantEnd        bool
 	}{
 		{"process running", start.Add(3 * time.Hour), true, false, "running", "执行中", false},
-		{"process available but stopped", start.Add(time.Minute), false, true, "failed", "执行中断（缺少结束时间）（" + path + "）", false},
-		{"no proc keyword within grace", start.Add(5 * time.Minute), false, false, "running", "执行中（进程探测不可用，按时间窗口判定）", false},
-		{"no proc keyword beyond grace", start.Add(20 * time.Minute), false, false, "failed", "执行中断（缺少结束时间）（" + path + "）", false},
+		{"process running with probe available", start.Add(3 * time.Hour), true, true, "running", "执行中", false},
+		{"probe available but process stopped", start.Add(time.Minute), false, true, "failed", "执行中断（缺少结束时间）（" + path + "）", false},
+		{"probe unavailable within grace", start.Add(5 * time.Minute), false, false, "running", "执行中（进程探测不可用，按时间窗口判定）", false},
+		{"probe unavailable beyond grace", start.Add(20 * time.Minute), false, false, "failed", "执行中断（缺少结束时间）（" + path + "）", false},
 	}
 	for _, tc := range cases {
-		execution, ok := executionFromStatus(task, path, info, tc.now, time.Time{}, false, tc.running, tc.procAvailable, profile)
+		execution, ok := executionFromStatus(task, path, info, tc.now, time.Time{}, false, tc.running, tc.probeAvailable, profile)
 		if !ok {
 			t.Fatalf("%s: expected an execution", tc.name)
 		}
