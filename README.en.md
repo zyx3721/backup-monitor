@@ -512,7 +512,7 @@ Three usual causes: the agent is not running (`systemctl status backup-agent`), 
 
 **A task is marked "missed" although it did run.**
 
-A run is only marked missed when nothing arrives **30 minutes** after the scheduled time; records are matched from 5 minutes before the scheduled time (clock tolerance) up to the **60-minute** match window, and anything later is treated as late and cannot backfill the verdict. The grace period cannot exceed the match window. If the task was never discovered at all, check that a profile under **Agent Management → Profiles** matches its hostname, then read the agent log.
+A run is only marked missed when nothing arrives **30 minutes** after the scheduled time. Records count for the current run only when they fall between 5 minutes before the scheduled time (clock tolerance) and the scheduled time plus the **60-minute** match window (default); later records are treated as late and cannot backfill the verdict. The grace period cannot exceed the match window. Missed alerts are isolated per schedule period: the next run only resolves its own period, and historical missed alerts need manual resolution. Tasks whose schedule cannot be parsed as cron are marked "schedule unrecognized", excluded from judgement, and can be backfilled with a cron expression in the task detail (checking "server-side only" skips pushing it to the agent). Manually triggered runs do not count as schedule matches and do not hide a missed schedule. While a host is offline, task judgement is paused and existing missed alerts are not cleared. If a task was never discovered at all, first check whether the `hostname` wildcard under **Agent Management → Profiles** matches, then read the agent log.
 
 **Notifications are not delivered.**
 
