@@ -379,7 +379,7 @@ Get-Service backup-agent-2
 | `artifact` / `path` / `dir` | 备份产物文件或目录 |
 | `proc` / `process` | 进程关键字；命中本机进程时该任务判为运行中，留空时依次回退到脚本名、任务名 |
 
-`proc` 关键字在 Linux 上匹配完整命令行（`/proc/<pid>/cmdline`），Windows 上匹配进程名（`tasklist`）。判定优先级：状态文件已给出成功或失败时以状态文件为准；状态文件无结论且进程命中时判为运行中；进程未命中则不影响原有判定。命中进程但既无状态文件也无计划时刻时不产出执行记录。
+`proc` 关键字在 Linux 上匹配完整命令行（`/proc/<pid>/cmdline`），Windows 上匹配完整命令行（优先 `wmic process get CommandLine`，失败回退 PowerShell `Get-WmiObject Win32_Process`）。判定优先级：状态文件已给出成功或失败时以状态文件为准；状态文件无结论且进程命中时判为运行中；进程未命中则不影响原有判定。命中进程但既无状态文件也无计划时刻时不产出执行记录。
 
 内联标签同样支持：
 

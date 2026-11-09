@@ -379,7 +379,7 @@ Tag values support `;`, `,` or space-separated key-value pairs; quote values tha
 | `artifact` / `path` / `dir` | Backup artifact file or directory |
 | `proc` / `process` | Process keyword; when a local process matches, the task is considered running. When empty, falls back to the script name and then the task name |
 
-On Linux, `proc` matches the full command line (`/proc/<pid>/cmdline`); on Windows it matches the process name (`tasklist`). Precedence: a status file that reports success or failure wins; without a status-file conclusion, a matching process marks the task as running; when no process matches, the original judgement is unchanged. A matching process with neither a status file nor a scheduled time produces no execution record.
+On Linux, `proc` matches the full command line (`/proc/<pid>/cmdline`); on Windows it matches the full command line (`wmic process get CommandLine`, falling back to PowerShell `Get-WmiObject Win32_Process`). Precedence: a status file that reports success or failure wins; without a status-file conclusion, a matching process marks the task as running; when no process matches, the original judgement is unchanged. A matching process with neither a status file nor a scheduled time produces no execution record.
 
 Inline tags are also supported:
 
